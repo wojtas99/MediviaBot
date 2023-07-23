@@ -19,21 +19,18 @@ def collect(loot_x, loot_y, hwnd):
     return
 
 
-def ReadMemory(hwnd):
+def read_memory(address_read, base_adr, hwnd):
     procID = win32process.GetWindowThreadProcessId(hwnd)
     procID = procID[1]
     process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-    modules = win32process.EnumProcessModules(process_handle)
-    base_adr = modules[0]
-    target_adr = base_adr + 0xDBEEA8
+    target_adr = address_read + base_adr
     address = c.c_void_p(target_adr)
     size = c.sizeof(c.c_longlong)
     buffer = c.create_string_buffer(size)
     bytes_read = c.c_size_t()
     c.windll.kernel32.ReadProcessMemory(process_handle, address, buffer, size, c.byref(bytes_read))
-    value = c.c_longlong.from_buffer(buffer).value
     c.windll.kernel32.CloseHandle(process_handle)
-    return value
+    return buffer
 
 
 def click_right(x, y, hwnd):
@@ -81,11 +78,29 @@ def get_text(screenshot):
         k += len(monster)
         height = int(height/len(monster))
         width = int(width/len(monster))
-        coordinates.append(height + 294)
-        coordinates.append(1080 - width - 124)
+        coordinates.append(height + 325)
+        coordinates.append(1080 - width - 110)
     return coordinates, new_text
 
 
 def distance(points):
     return math.sqrt((points[0]-900)**2 + (points[1] - 450)**2)
+
+
+def read_offsets(address, extra_offset, hwnd):
+    procID = win32process.GetWindowThreadProcessId(hwnd)
+    procID = procID[1]
+    process_handler = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
+    modules = win32process.EnumProcessModules(process_handler)
+    moduleBase = modules[0]
+    target_adr = moduleBase + address
+    address = c.c_void_p(target_adr)
+    size = c.sizeof(c.c_longlong)
+    buffer = c.create_string_buffer(size)
+    bytes_read = c.c_size_t()
+    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, size, c.byref(bytes_read))
+    value = c.c_longlong.from_buffer(buffer).value
+    target_adr = value + extra_offset
+    c.windll.kernel32.CloseHandle(process_handler)
+    return target_adr
 

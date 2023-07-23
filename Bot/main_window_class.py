@@ -1,23 +1,21 @@
 import time
-
 from PyQt5.QtWidgets import *
 from window_capture import WindowCapture
 import numpy as np
 import cv2 as cv
 from funkcje import *
 from threading import Thread
-from PyQt5.QtGui import *
 
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-
         self.resize(500, 500)
         #  Title and Size
         self.setWindowTitle("EasyBot")
-        tab = QTabWidget()
+        tab = QTabWidget(self)
         tab.addTab(TargetTab(), "Target")
+        tab.addTab(CaveTab(), "Waypoints")
         tab.addTab(RuneTab(), "Rune")
         vbox = QVBoxLayout(self)
         vbox.addWidget(tab)
@@ -27,8 +25,6 @@ class MainWindow(QWidget):
 class TargetTab(QWidget):
     def __init__(self):
         super().__init__()
-        win_cap = WindowCapture('Medivia')
-        game = win32gui.FindWindow(None, 'Medivia')
 
         self.monster_list = QListWidget(self)
         self.monster_list.setGeometry(0, 0, 150, 200)
@@ -58,9 +54,22 @@ class TargetTab(QWidget):
         target_status_text = QLabel("Start Targeting", self)
         target_status_text.setGeometry(17, 390, 100, 30)
 
+        self.loot_status = QCheckBox(self)
+        self.loot_status.move(0, 370)
+        loot_status_text = QLabel("Open Monsters", self)
+        loot_status_text.setGeometry(17, 360, 100, 30)
+
         def list_monsters():
+            game = win32gui.FindWindow(None, 'Medivia')
+            win_cap = WindowCapture('Medivia')
+            procID = win32process.GetWindowThreadProcessId(game)
+            procID = procID[1]
+            process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
+            modules = win32process.EnumProcessModules(process_handle)
+            base_adr = modules[0]
             while True:
-                value = ReadMemory(game)
+                value = read_memory(0xDBEEA8, base_adr, game)
+                value = c.c_ulonglong.from_buffer(value).value
                 if self.target_status.checkState() == 2:
                     if value == 0:
                         img = win_cap.get_screenshot()
@@ -74,15 +83,69 @@ class TargetTab(QWidget):
                                          enumerate(monsters)]
                         combined_list = sorted(combined_list, key=distance)
                         if monsters:
+                            continue_while = True
                             for monster in combined_list:
                                 for i in range(self.monster_list.count()):
                                     if monster[2] == self.monster_list.item(i).text():
-                                        print(monster[0])
-                                        print(monster[1])
                                         click_right(monster[0], monster[1], game)
-                                        return
+                                        continue_while = False
+                                        time.sleep(1)
+                                        break
+                                if not continue_while:
+                                    break
 
-                time.sleep(0.05)
+                time.sleep(0.1)
+
+        def loot_monster():
+            game = win32gui.FindWindow(None, 'Medivia')
+            loot = 0
+            monsterX = 0
+            savedX = 0
+            savedY = 0
+            monsterY = 0
+            procID = win32process.GetWindowThreadProcessId(game)
+            procID = procID[1]
+            process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
+            modules = win32process.EnumProcessModules(process_handle)
+            base_adr = modules[0]
+            while True:
+                while self.loot_status.checkState() == 2:
+                    targetID = read_memory(0xDBEEA8, base_adr, game)
+                    targetID = c.c_ulonglong.from_buffer(targetID).value
+                    while targetID != 0:
+                        if loot == 0:
+                            loot = 1
+                        targetID = read_memory(0xDBEEA8, base_adr, game)
+                        targetID = c.c_ulonglong.from_buffer(targetID).value
+                        savedX = monsterX
+                        savedY = monsterY
+                        monsterY = read_memory(targetID + 0x3C, 0, game)
+                        monsterY = c.c_int.from_buffer(monsterY).value
+                        monsterX = read_memory(targetID + 0x38, 0, game)
+                        monsterX = c.c_int.from_buffer(monsterX).value
+                        time.sleep(0.01)
+                        if monsterX > 60000:
+                            monsterX = savedX
+                            monsterY = savedY
+                            break
+                    if loot == 1:
+                        x = read_memory(0xDBFC48, base_adr, game)
+                        x = c.c_int.from_buffer(x).value
+                        y = read_memory(0xDBFC4C, base_adr, game)
+                        y = c.c_int.from_buffer(y).value
+                        x = savedX - x
+                        y = savedY - y
+                        x = 875 + x * 70
+                        y = 475 + y * 70
+                        click_right(x, y, game)
+                        time.sleep(2)
+                    loot = 0
+
+                time.sleep(1)
+
+        loot_thread = Thread(target=loot_monster)
+        loot_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
+        loot_thread.start()
 
         monster_thread = Thread(target=list_monsters)
         monster_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
@@ -108,3 +171,25 @@ class TargetTab(QWidget):
 class RuneTab(QWidget):
     def __init__(self):
         super().__init__()
+
+
+class CaveTab(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.waypoints_list = QListWidget(self)
+        self.waypoints_list.setGeometry(0, 0, 150, 200)
+
+        left = QPushButton("<", self)
+        left.setGeometry(0, 200, 30, 25)
+        right = QPushButton(">", self)
+        right.setGeometry(31, 200, 30, 25)
+
+        del_waypoint = QPushButton("Del", self)
+        del_waypoint.setGeometry(111, 200, 40, 25)
+
+        self.cave_status = QCheckBox(self)
+        self.cave_status.move(0, 400)
+        cave_status_text = QLabel("Follow Waypoints", self)
+        cave_status_text.setGeometry(17, 390, 100, 30)
+
+
