@@ -1,3 +1,4 @@
+import os
 import time
 from PyQt5.QtWidgets import *
 from window_capture import WindowCapture
@@ -14,9 +15,9 @@ class MainWindow(QWidget):
         #  Title and Size
         self.setWindowTitle("EasyBot")
         tab = QTabWidget(self)
-        tab.addTab(TargetTab(), "Target")
-        tab.addTab(CaveTab(), "Waypoints")
-        tab.addTab(RuneTab(), "Rune")
+        tab.addTab(TargetTab(), "Monster Targeting")
+        tab.addTab(CaveTab(), "CaveBot")
+        tab.addTab(RuneTab(), "RuneMaker")
         vbox = QVBoxLayout(self)
         vbox.addWidget(tab)
         self.setLayout(vbox)
@@ -27,27 +28,55 @@ class TargetTab(QWidget):
         super().__init__()
 
         self.monster_list = QListWidget(self)
-        self.monster_list.setGeometry(0, 0, 150, 200)
+        self.monster_list.setGeometry(0, 20, 150, 200)
 
-        monster_name = QLabel("Monster :", self)
-        monster_name.setGeometry(160, 0, 50, 20)
+        self.save_targeting_list = QListWidget(self)
+        self.save_targeting_list.setGeometry(300, 320, 120, 80)
+        for file in os.listdir("Targeting"):
+            self.save_targeting_list.addItem(f"{file.split('.')[0]}")
+
+        self.save_targeting_text = QLabel("Name", self)
+        self.save_targeting_text.setGeometry(301, 400, 100, 20)
+
+        self.save_targeting_textfield = QLineEdit(self)
+        self.save_targeting_textfield.setGeometry(335, 401, 85, 20)
+
+        self.save_targeting_button = QPushButton("Save", self)
+        self.save_targeting_button.setGeometry(334, 421, 41, 20)
+        self.save_targeting_button.clicked.connect(self.save_monster_list)
+
+        self.load_targeting_button = QPushButton("Load", self)
+        self.load_targeting_button.setGeometry(380, 421, 41, 20)
+        self.load_targeting_button.clicked.connect(self.load_monster_list)
+
+        text_label = QLabel("Targeting", self)
+        text_label.setGeometry(0, 0, 100, 20)
+
+        monster_name = QLabel("Monster ", self)
+        monster_name.setGeometry(160, 20, 50, 20)
+
         self.textfield = QLineEdit(self)
-        self.textfield.setGeometry(210, 0, 100, 20)
+        self.textfield.setGeometry(210, 20, 100, 20)
 
         add_monster = QPushButton("Add", self)
-        add_monster.setGeometry(209, 20, 40, 25)
+        add_monster.setGeometry(209, 40, 40, 25)
         add_monster.clicked.connect(self.create_monster)
 
         left = QPushButton("<", self)
-        left.setGeometry(0, 200, 30, 25)
+        left.setGeometry(0, 220, 30, 25)
         left.clicked.connect(self.go_left)
+
         right = QPushButton(">", self)
-        right.setGeometry(31, 200, 30, 25)
+        right.setGeometry(31, 220, 30, 25)
         right.clicked.connect(self.go_right)
 
         del_monster = QPushButton("Del", self)
-        del_monster.setGeometry(111, 200, 40, 25)
+        del_monster.setGeometry(111, 220, 40, 25)
         del_monster.clicked.connect(self.delete_monster)
+
+        clear_monsters = QPushButton("Clear", self)
+        clear_monsters.setGeometry(66, 220, 40, 25)
+        clear_monsters.clicked.connect(self.clear_monster_list)
 
         self.target_status = QCheckBox(self)
         self.target_status.move(0, 400)
@@ -58,6 +87,28 @@ class TargetTab(QWidget):
         self.loot_status.move(0, 370)
         loot_status_text = QLabel("Open Monsters", self)
         loot_status_text.setGeometry(17, 360, 100, 30)
+
+    def clear_monster_list(self):
+        self.monster_list.clear()
+
+    def save_monster_list(self):
+        if self.save_targeting_textfield.text() != '':
+            f = open("Targeting/"f"{self.save_targeting_textfield.text()}.txt", "w")
+            self.save_targeting_list.addItem(f'{self.save_targeting_textfield.text()}')
+            self.save_targeting_textfield.clear()
+            for i in range(self.monster_list.count()):
+                f.write(f'{self.monster_list.item(i).text()}\n')
+            f.close()
+
+    def load_monster_list(self):
+        self.monster_list.clear()
+        selected_item = self.save_targeting_list.currentItem()
+        if selected_item:
+            f = open("Targeting/"f"{self.save_targeting_list.item(self.save_targeting_list.row(selected_item)).text()}.txt")
+            for monster in f:
+                if monster != '\n':
+                    self.monster_list.addItem(monster.split("\n")[0])
+            f.close()
 
         def list_monsters():
             game = win32gui.FindWindow(None, 'Medivia')
@@ -177,19 +228,35 @@ class CaveTab(QWidget):
     def __init__(self):
         super().__init__()
         self.waypoints_list = QListWidget(self)
-        self.waypoints_list.setGeometry(0, 0, 150, 200)
+        self.waypoints_list.setGeometry(0, 20, 150, 200)
+
+        label_text = QLabel("Waypoints", self)
+        label_text.setGeometry(0, 0, 100, 20)
 
         left = QPushButton("<", self)
-        left.setGeometry(0, 200, 30, 25)
+        left.setGeometry(0, 220, 30, 25)
         right = QPushButton(">", self)
-        right.setGeometry(31, 200, 30, 25)
+        right.setGeometry(31, 220, 30, 25)
 
         del_waypoint = QPushButton("Del", self)
-        del_waypoint.setGeometry(111, 200, 40, 25)
+        del_waypoint.setGeometry(111, 220, 40, 25)
 
         self.cave_status = QCheckBox(self)
         self.cave_status.move(0, 400)
         cave_status_text = QLabel("Follow Waypoints", self)
         cave_status_text.setGeometry(17, 390, 100, 30)
+
+        stand = QPushButton("Stand", self)
+        stand.setGeometry(200, 10, 40, 25)
+        north = QPushButton("North", self)
+        north.setGeometry(241, 10, 40, 25)
+        south = QPushButton("South", self)
+        south.setGeometry(241, 36, 40, 25)
+        west = QPushButton("West", self)
+        west.setGeometry(200, 36, 40, 25)
+        east = QPushButton("East", self)
+        east.setGeometry(282, 36, 40, 25)
+        action = QPushButton("Action", self)
+        action.setGeometry(282, 10, 40, 25)
 
 
