@@ -88,28 +88,6 @@ class TargetTab(QWidget):
         loot_status_text = QLabel("Open Monsters", self)
         loot_status_text.setGeometry(17, 360, 100, 30)
 
-    def clear_monster_list(self):
-        self.monster_list.clear()
-
-    def save_monster_list(self):
-        if self.save_targeting_textfield.text() != '':
-            f = open("Targeting/"f"{self.save_targeting_textfield.text()}.txt", "w")
-            self.save_targeting_list.addItem(f'{self.save_targeting_textfield.text()}')
-            self.save_targeting_textfield.clear()
-            for i in range(self.monster_list.count()):
-                f.write(f'{self.monster_list.item(i).text()}\n')
-            f.close()
-
-    def load_monster_list(self):
-        self.monster_list.clear()
-        selected_item = self.save_targeting_list.currentItem()
-        if selected_item:
-            f = open("Targeting/"f"{self.save_targeting_list.item(self.save_targeting_list.row(selected_item)).text()}.txt")
-            for monster in f:
-                if monster != '\n':
-                    self.monster_list.addItem(monster.split("\n")[0])
-            f.close()
-
         def list_monsters():
             game = win32gui.FindWindow(None, 'Medivia')
             win_cap = WindowCapture('Medivia')
@@ -201,6 +179,28 @@ class TargetTab(QWidget):
         monster_thread = Thread(target=list_monsters)
         monster_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
         monster_thread.start()
+
+    def clear_monster_list(self):
+        self.monster_list.clear()
+
+    def save_monster_list(self):
+        if self.save_targeting_textfield.text() != '':
+            f = open("Targeting/"f"{self.save_targeting_textfield.text()}.txt", "w")
+            self.save_targeting_list.addItem(f'{self.save_targeting_textfield.text()}')
+            self.save_targeting_textfield.clear()
+            for i in range(self.monster_list.count()):
+                f.write(f'{self.monster_list.item(i).text()}\n')
+            f.close()
+
+    def load_monster_list(self):
+        self.monster_list.clear()
+        selected_item = self.save_targeting_list.currentItem()
+        if selected_item:
+            f = open("Targeting/"f"{self.save_targeting_list.item(self.save_targeting_list.row(selected_item)).text()}.txt")
+            for monster in f:
+                if monster != '\n':
+                    self.monster_list.addItem(monster.split("\n")[0])
+            f.close()
 
     def delete_monster(self):
         selected_item = self.monster_list.currentItem()
