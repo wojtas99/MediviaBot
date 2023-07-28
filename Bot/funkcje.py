@@ -19,11 +19,9 @@ def collect(loot_x, loot_y, hwnd):
     return
 
 
-def read_memory(address_read, base_adr, hwnd):
-    procID = win32process.GetWindowThreadProcessId(hwnd)
-    procID = procID[1]
-    process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-    target_adr = address_read + base_adr
+def read_memory(address_read, base_adr, offset, proc_id):
+    process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, proc_id)
+    target_adr = address_read + base_adr + offset
     address = c.c_void_p(target_adr)
     size = c.sizeof(c.c_longlong)
     buffer = c.create_string_buffer(size)
@@ -40,10 +38,10 @@ def click_right(x, y, hwnd):
     return
 
 
-def use(loot_x, loot_y, hwnd):
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(loot_x, loot_y))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(loot_x, loot_y))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(loot_x, loot_y))
+def click_left(x, y, hwnd):
+    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(x, y))
     return
 
 
@@ -78,8 +76,8 @@ def get_text(screenshot):
         k += len(monster)
         height = int(height/len(monster))
         width = int(width/len(monster))
-        coordinates.append(height + 325)
-        coordinates.append(1080 - width - 110)
+        coordinates.append(height + 324)
+        coordinates.append(1080 - width - 112)
     return coordinates, new_text
 
 
