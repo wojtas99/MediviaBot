@@ -1,11 +1,19 @@
 import math
-
 import win32gui
 import win32con
 import win32api
 import win32process
 import pytesseract
 import ctypes as c
+from PyQt5.QtWidgets import *
+from window_capture import WindowCapture
+from threading import Thread
+import re
+import numpy as np
+import cv2 as cv
+import os
+import time
+from PyQt5.QtGui import QMovie
 pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Wojciech\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
 
 
