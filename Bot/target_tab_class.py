@@ -109,7 +109,6 @@ class TargetTab(QWidget):
                         combined_list = [(coordinates[i * 2], coordinates[i * 2 + 1], monster) for i, monster in
                                          enumerate(monsters)]
                         combined_list = sorted(combined_list, key=distance)
-                        print(combined_list)
                         if monsters:
                             continue_while = True
                             for monster in combined_list:
