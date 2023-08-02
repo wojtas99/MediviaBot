@@ -1,3 +1,5 @@
+import time
+
 from funkcje import *
 
 
@@ -44,7 +46,7 @@ class TargetTab(QWidget):
 
         text_label = QLabel("Targeting", self)
         text_label.setGeometry(0, 0, 100, 20)
-        #text_label.setStyleSheet("color: yellow")
+        # text_label.setStyleSheet("color: yellow")
 
         monster_name = QLabel("Monster ", self)
         monster_name.setGeometry(160, 20, 50, 20)
@@ -90,22 +92,24 @@ class TargetTab(QWidget):
             modules = win32process.EnumProcessModules(process_handle)
             base_adr = modules[0]
             win_cap = WindowCapture('Medivia')
+            lower = np.array([9, 180, 150])
+            upper = np.array([14, 190, 255])
             while True:
                 value = read_memory(0xDBEEA8, base_adr, 0, procID)
                 value = c.c_ulonglong.from_buffer(value).value
                 if self.target_status.checkState() == 2:
                     if value == 0:
-                        time.sleep(1)
                         img = win_cap.get_screenshot()
-                        lower = np.array([9, 180, 150])
-                        upper = np.array([14, 190, 255])
                         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
                         mask = cv.inRange(hsv, lower, upper)
                         output = cv.bitwise_and(img, img, mask=mask)
-                        coordinates, monsters = get_text(output)
+                        gray = cv.cvtColor(output, cv.COLOR_BGR2GRAY)
+                        thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+                        coordinates, monsters = get_text(thresh)
                         combined_list = [(coordinates[i * 2], coordinates[i * 2 + 1], monster) for i, monster in
                                          enumerate(monsters)]
                         combined_list = sorted(combined_list, key=distance)
+                        print(combined_list)
                         if monsters:
                             continue_while = True
                             for monster in combined_list:
@@ -113,11 +117,10 @@ class TargetTab(QWidget):
                                     if monster[2] == self.monster_list.item(i).text():
                                         click_right(monster[0], monster[1], game)
                                         continue_while = False
+                                        time.sleep(0.1)
                                         break
                                 if not continue_while:
                                     break
-
-                time.sleep(0.1)
 
         def loot_monster():
             game = win32gui.FindWindow(None, 'Medivia')
@@ -177,7 +180,8 @@ class TargetTab(QWidget):
     def delete_list(self):
         selected_item = self.save_targeting_list.currentItem()
         if selected_item:
-            os.remove('Targeting/'f'{self.save_targeting_list.item(self.save_targeting_list.row(selected_item)).text()}.txt')
+            os.remove(
+                'Targeting/'f'{self.save_targeting_list.item(self.save_targeting_list.row(selected_item)).text()}.txt')
             self.save_targeting_list.takeItem(self.save_targeting_list.row(selected_item))
 
     def clear_monster_list(self):
@@ -196,7 +200,8 @@ class TargetTab(QWidget):
         self.monster_list.clear()
         selected_item = self.save_targeting_list.currentItem()
         if selected_item:
-            f = open("Targeting/"f"{self.save_targeting_list.item(self.save_targeting_list.row(selected_item)).text()}.txt")
+            f = open(
+                "Targeting/"f"{self.save_targeting_list.item(self.save_targeting_list.row(selected_item)).text()}.txt")
             for monster in f:
                 if monster != '\n':
                     self.monster_list.addItem(monster.split("\n")[0])
@@ -217,4 +222,3 @@ class TargetTab(QWidget):
 
     def go_left(self):
         self.monster_list.setCurrentRow(self.monster_list.currentRow() - 1)
-

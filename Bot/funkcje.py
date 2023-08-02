@@ -5,6 +5,7 @@ import win32api
 import win32process
 import pytesseract
 import ctypes as c
+from PIL import Image
 from PyQt5.QtWidgets import *
 from window_capture import WindowCapture
 from threading import Thread
@@ -61,7 +62,7 @@ def get_text(screenshot):
     for i in text:
         i = i.split("\n")
         for s in i:
-            if s != '':
+            if s != '' and len(s) >= 3:
                 blank_text.append(s)
     new_text = []
     for line in blank_text:
@@ -75,22 +76,17 @@ def get_text(screenshot):
     k = 0
     coordinates = []
     for monster in new_text:
-        height = 0
-        width = 0
         monster = "".join(monster.split())
-        for i in range(k, len(monster) + k):
-            height += int(new_data[i][1])
-            width += int(new_data[i][2])
+        height = int(new_data[int(len(monster)/2) + k][1])
+        width = int(new_data[int(len(monster)/2) + k][2])
         k += len(monster)
-        height = int(height/len(monster))
-        width = int(width/len(monster))
-        coordinates.append(height + 324)
-        coordinates.append(1080 - width - 112)
+        coordinates.append(height + 290)
+        coordinates.append(1080 - width - 140)
     return coordinates, new_text
 
 
 def distance(points):
-    return math.sqrt((points[0]-900)**2 + (points[1] - 450)**2)
+    return math.sqrt((points[0]-850)**2 + (points[1] - 480)**2)
 
 
 def read_offsets(address, extra_offset, hwnd):

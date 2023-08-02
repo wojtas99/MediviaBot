@@ -1,3 +1,5 @@
+import time
+
 from funkcje import *
 
 
@@ -131,6 +133,7 @@ class CaveTab(QWidget):
             process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
             modules = win32process.EnumProcessModules(process_handle)
             base_adr = modules[0]
+            attacked = 0
             while True:
                 if cave_status.checkState() == 0:
                     return
@@ -156,6 +159,10 @@ class CaveTab(QWidget):
                             else:
                                 myx = int(wpt[0]) - x
                                 myy = int(wpt[1]) - y
+                            if attacked == 1:
+                                time.sleep(3)
+                                attacked = 0
+                                continue
                             if myy == -1 or myy == -2:
                                 win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
                                 win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
@@ -172,10 +179,15 @@ class CaveTab(QWidget):
                                 win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
                                 win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
                                 continue
-                            x = 875 + myx * 70
-                            y = 475 + myy * 70
-                            click_left(x, y, game)
-                            time.sleep(4)
+                            if (0 <= abs(myx) <= 7) and (0 <= abs(myy) <= 7) and z == int(wpt[2]):
+                                x = 875 + myx * 70
+                                y = 475 + myy * 70
+                                click_left(x, y, game)
+                                time.sleep(4)
+
+                            break
+                        else:
+                            attacked = 1
 
     def delete_wpt_item(self):
         selected_item = self.waypoints_list.currentItem()
