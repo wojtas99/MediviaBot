@@ -160,7 +160,7 @@ class CaveTab(QWidget):
                                 myx = int(wpt[0]) - x
                                 myy = int(wpt[1]) - y
                             if attacked == 1:
-                                time.sleep(3)
+                                time.sleep(4)
                                 attacked = 0
                                 continue
                             if myy == -1 or myy == -2:
@@ -184,7 +184,6 @@ class CaveTab(QWidget):
                                 y = 475 + myy * 70
                                 click_left(x, y, game)
                                 time.sleep(4)
-
                             break
                         else:
                             attacked = 1

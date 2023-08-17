@@ -105,16 +105,20 @@ class TargetTab(QWidget):
                         output = cv.bitwise_and(img, img, mask=mask)
                         gray = cv.cvtColor(output, cv.COLOR_BGR2GRAY)
                         thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+                        '''
                         coordinates, monsters = get_text(thresh)
-                        combined_list = [(coordinates[i * 2], coordinates[i * 2 + 1], monster) for i, monster in
+                          combined_list = [(coordinates[i * 2], coordinates[i * 2 + 1], monster) for i, monster in
                                          enumerate(monsters)]
+                        '''
+                        combined_list = get_text(thresh)
                         combined_list = sorted(combined_list, key=distance)
-                        if monsters:
+
+                        if combined_list:
                             continue_while = True
                             for monster in combined_list:
                                 for i in range(self.monster_list.count()):
-                                    if monster[2] == self.monster_list.item(i).text():
-                                        click_right(monster[0], monster[1], game)
+                                    if monster[0] == self.monster_list.item(i).text():
+                                        click_right(monster[1] + 310, 1080 - monster[2] - 140, game)
                                         continue_while = False
                                         time.sleep(0.1)
                                         break
@@ -163,10 +167,9 @@ class TargetTab(QWidget):
                         x = 875 + x * 70
                         y = 475 + y * 70
                         click_right(x, y, game)
-                        time.sleep(2)
+                        time.sleep(1)
                     loot = 0
-
-                time.sleep(1)
+                time.sleep(0.1)
 
         loot_thread = Thread(target=loot_monster)
         loot_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
