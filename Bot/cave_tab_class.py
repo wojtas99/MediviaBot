@@ -1,5 +1,6 @@
 import time
-
+# lol
+s = 10
 from funkcje import *
 
 
