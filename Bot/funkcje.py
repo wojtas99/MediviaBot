@@ -5,11 +5,14 @@ import win32api
 import win32process
 import pytesseract
 import ctypes as c
+from typing import List, Tuple
 from PIL import Image
+import threading
 from PyQt5.QtWidgets import *
 from window_capture import WindowCapture
 from threading import Thread
 import re
+from win32con import VK_LBUTTON
 import numpy as np
 import cv2 as cv
 import os
@@ -17,27 +20,24 @@ import time
 from PyQt5.QtGui import QMovie
 pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Wojciech\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
 
+lock = threading.Lock()
 
-def collect(loot_x, loot_y, hwnd):
+
+def collect_items(loot_x, loot_y, bp_x, bp_y, hwnd):
     win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(loot_x, loot_y))
     win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(1681, 505))
-    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(1681, 505))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(1681, 505))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(1681, 505))
+    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(bp_x, bp_y))
+    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
+    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(bp_x, bp_y))
+    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
     return
 
 
-def read_memory(address_read, base_adr, offset, proc_id):
-    process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, proc_id)
-    target_adr = address_read + base_adr + offset
-    address = c.c_void_p(target_adr)
-    size = c.sizeof(c.c_longlong)
-    buffer = c.create_string_buffer(size)
-    bytes_read = c.c_size_t()
-    c.windll.kernel32.ReadProcessMemory(process_handle, address, buffer, size, c.byref(bytes_read))
-    c.windll.kernel32.CloseHandle(process_handle)
-    return buffer
+def drop_items(loot_x, loot_y, hwnd):
+    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(loot_x, loot_y))
+    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
+    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(845, 468))
+    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(845, 468))
 
 
 def click_right(x, y, hwnd):
@@ -52,6 +52,18 @@ def click_left(x, y, hwnd):
     win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(x, y))
     win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(x, y))
     return
+
+
+def read_memory(address_read, base_adr, offset, proc_id):
+    process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, proc_id)
+    target_adr = address_read + base_adr + offset
+    address = c.c_void_p(target_adr)
+    size = c.sizeof(c.c_longlong)
+    buffer = c.create_string_buffer(size)
+    bytes_read = c.c_size_t()
+    c.windll.kernel32.ReadProcessMemory(process_handle, address, buffer, size, c.byref(bytes_read))
+    c.windll.kernel32.CloseHandle(process_handle)
+    return buffer
 
 
 def get_text(screenshot):
@@ -151,4 +163,49 @@ def read_offsets(address, extra_offset, hwnd):
     target_adr = value + extra_offset
     c.windll.kernel32.CloseHandle(process_handler)
     return target_adr
+
+
+def merge_close_points(points: List[Tuple[float, float]], threshold: float = 0.5) -> List[Tuple[int, int]]:
+    merged_points = []
+    merged_indices = set()
+    for i in range(len(points)):
+        if i in merged_indices:
+            continue
+        x1, y1 = points[i]
+        merged_x, merged_y = x1, y1
+        count = 1
+        for j in range(i + 1, len(points)):
+            if j in merged_indices:
+                continue
+            x2, y2 = points[j]
+            dist = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+            if dist < threshold:
+                merged_x += x2
+                merged_y += y2
+                count += 1
+                merged_indices.add(j)
+        merged_x /= count
+        merged_y /= count
+        merged_points.append((int(merged_x), int(merged_y)))
+    return merged_points
+
+
+def find_rectangle(result, monster, threshold=0.5):
+    locations = np.where(result >= threshold)
+    locations = list(zip(*locations[::-1]))
+    rectangles = []
+    for loc in locations:
+        rect = [int(loc[0]), int(loc[1]), monster.shape[1], monster.shape[0]]
+        rectangles.append(rect)
+    return rectangles
+
+
+def find_points(rectangles):
+    points = []
+    for (x, y, w, h) in rectangles:
+        center_x = x + int(w / 2)
+        center_y = y + int(h / 2)
+        points.append((center_x, center_y))
+    return points
+
 

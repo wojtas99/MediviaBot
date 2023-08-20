@@ -9,12 +9,14 @@ class WindowCapture:
     h = 0
     hwnd = None
 
-    def __init__(self, window_name):
+    def __init__(self, window_name, w, h, x, y):
         self.hwnd = win32gui.FindWindow(None, window_name)
         if not self.hwnd:
             raise Exception('Window not found: {}'.format(window_name))
-        self.w = 1130
-        self.h = 840
+        self.w = w
+        self.h = h
+        self.x = x
+        self.y = y
 
     def get_screenshot(self):
         # get the window image data
@@ -24,7 +26,7 @@ class WindowCapture:
         dataBitMap = win32ui.CreateBitmap()
         dataBitMap.CreateCompatibleBitmap(dcObj, self.w, self.h)
         cDC.SelectObject(dataBitMap)
-        cDC.BitBlt((0, 0), (self.w, self.h), dcObj, (300, 78), win32con.SRCCOPY)
+        cDC.BitBlt((0, 0), (self.w, self.h), dcObj, (self.x, self.y), win32con.SRCCOPY)
         # convert the raw data into a format opencv can read
         signedIntsArray = dataBitMap.GetBitmapBits(True)
         img = np.fromstring(signedIntsArray, dtype='uint8')

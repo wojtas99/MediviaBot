@@ -1,5 +1,3 @@
-import time
-
 from funkcje import *
 
 
@@ -11,12 +9,15 @@ class TargetTab(QWidget):
         parent_widget.setStyleSheet(f"background-image: url(background.jpg);")
         parent_widget.resize(500, 500)
         '''
-
         label = QLabel(self)
         movie = QMovie("Demon.gif")
         label.setMovie(movie)
         label.move(200, 100)
         movie.start()
+
+        text_label = QLabel("Targeting", self)
+        text_label.setGeometry(0, 0, 100, 20)
+        # text_label.setStyleSheet("color: yellow")
 
         self.monster_list = QListWidget(self)
         self.monster_list.setGeometry(0, 20, 150, 200)
@@ -43,10 +44,6 @@ class TargetTab(QWidget):
         self.delete_targeting_button = QPushButton("Del", self)
         self.delete_targeting_button.setGeometry(299, 421, 31, 20)
         self.delete_targeting_button.clicked.connect(self.delete_list)
-
-        text_label = QLabel("Targeting", self)
-        text_label.setGeometry(0, 0, 100, 20)
-        # text_label.setStyleSheet("color: yellow")
 
         monster_name = QLabel("Monster ", self)
         monster_name.setGeometry(160, 20, 50, 20)
@@ -79,101 +76,48 @@ class TargetTab(QWidget):
         target_status_text = QLabel("Start Targeting", self)
         target_status_text.setGeometry(17, 281, 100, 30)
 
-        self.loot_status = QCheckBox(self)
-        self.loot_status.move(0, 260)
-        loot_status_text = QLabel("Open Monsters", self)
-        loot_status_text.setGeometry(17, 251, 100, 30)
+        self.follow_monster_status = QCheckBox(self)
+        self.follow_monster_status.move(0, 320)
+        follow_monster_status_text = QLabel("Follow Monster", self)
+        follow_monster_status_text.setGeometry(17, 311, 100, 30)
 
         def list_monsters():
+            continue_while = True
             game = win32gui.FindWindow(None, 'Medivia')
             procID = win32process.GetWindowThreadProcessId(game)
             procID = procID[1]
             process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
             modules = win32process.EnumProcessModules(process_handle)
             base_adr = modules[0]
-            win_cap = WindowCapture('Medivia')
+            # win_cap = WindowCapture('Medivia', 1130, 840, 300, 78)
+            win_cap = WindowCapture('Medivia', 675, 675, 525, 150)
             lower = np.array([9, 180, 150])
             upper = np.array([14, 190, 255])
             while True:
-                value = read_memory(0xDBEEA8, base_adr, 0, procID)
-                value = c.c_ulonglong.from_buffer(value).value
                 if self.target_status.checkState() == 2:
+                    value = read_memory(0xDBEEA8, base_adr, 0, procID)
+                    value = c.c_ulonglong.from_buffer(value).value
                     if value == 0:
-                        img = win_cap.get_screenshot()
-                        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-                        mask = cv.inRange(hsv, lower, upper)
-                        output = cv.bitwise_and(img, img, mask=mask)
-                        gray = cv.cvtColor(output, cv.COLOR_BGR2GRAY)
-                        thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
-                        '''
-                        coordinates, monsters = get_text(thresh)
-                          combined_list = [(coordinates[i * 2], coordinates[i * 2 + 1], monster) for i, monster in
-                                         enumerate(monsters)]
-                        '''
-                        combined_list = get_text(thresh)
-                        combined_list = sorted(combined_list, key=distance)
-
-                        if combined_list:
-                            continue_while = True
-                            for monster in combined_list:
-                                for i in range(self.monster_list.count()):
-                                    if monster[0] == self.monster_list.item(i).text():
-                                        click_right(monster[1] + 310, 1080 - monster[2] - 140, game)
-                                        continue_while = False
-                                        time.sleep(0.1)
+                        with lock:
+                            img = win_cap.get_screenshot()
+                            hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+                            mask = cv.inRange(hsv, lower, upper)
+                            output = cv.bitwise_and(img, img, mask=mask)
+                            gray = cv.cvtColor(output, cv.COLOR_BGR2GRAY)
+                            thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+                            combined_list = get_text(thresh)
+                            combined_list = sorted(combined_list, key=distance)
+                            if combined_list:
+                                for monster in combined_list:
+                                    for i in range(self.monster_list.count()):
+                                        if monster[0] == self.monster_list.item(i).text().replace(" ", ""):
+                                            click_right(monster[1] + 525, 1040 - monster[2] - 405 + 150 + 55, game)
+                                            continue_while = False
+                                            time.sleep(0.5)
+                                            break
+                                    if not continue_while:
+                                        continue_while = True
                                         break
-                                if not continue_while:
-                                    break
-
-        def loot_monster():
-            game = win32gui.FindWindow(None, 'Medivia')
-            procID = win32process.GetWindowThreadProcessId(game)
-            procID = procID[1]
-            process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-            modules = win32process.EnumProcessModules(process_handle)
-            base_adr = modules[0]
-            loot = 0
-            monsterX = 0
-            savedX = 0
-            savedY = 0
-            monsterY = 0
-            while True:
-                while self.loot_status.checkState() == 2:
-                    targetID = read_memory(0xDBEEA8, base_adr, 0, procID)
-                    targetID = c.c_ulonglong.from_buffer(targetID).value
-                    while targetID != 0:
-                        if loot == 0:
-                            loot = 1
-                        targetID = read_memory(0xDBEEA8, base_adr, 0, procID)
-                        targetID = c.c_ulonglong.from_buffer(targetID).value
-                        savedX = monsterX
-                        savedY = monsterY
-                        monsterY = read_memory(targetID, 0, 0x3C, procID)
-                        monsterY = c.c_int.from_buffer(monsterY).value
-                        monsterX = read_memory(targetID, 0, 0x38, procID)
-                        monsterX = c.c_int.from_buffer(monsterX).value
-                        time.sleep(0.01)
-                        if monsterX > 60000:
-                            monsterX = savedX
-                            monsterY = savedY
-                            break
-                    if loot == 1:
-                        x = read_memory(0xDBFC48, base_adr, 0, procID)
-                        x = c.c_int.from_buffer(x).value
-                        y = read_memory(0xDBFC4C, base_adr, 0, procID)
-                        y = c.c_int.from_buffer(y).value
-                        x = savedX - x
-                        y = savedY - y
-                        x = 875 + x * 70
-                        y = 475 + y * 70
-                        click_right(x, y, game)
-                        time.sleep(1)
-                    loot = 0
-                time.sleep(0.1)
-
-        loot_thread = Thread(target=loot_monster)
-        loot_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
-        loot_thread.start()
 
         monster_thread = Thread(target=list_monsters)
         monster_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
@@ -224,3 +168,4 @@ class TargetTab(QWidget):
 
     def go_left(self):
         self.monster_list.setCurrentRow(self.monster_list.currentRow() - 1)
+

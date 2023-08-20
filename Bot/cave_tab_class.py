@@ -127,27 +127,31 @@ class CaveTab(QWidget):
                 time.sleep(0.2)
 
         def follow_wpt():
+            tmp = 0
+            attacked = 1
             game = win32gui.FindWindow(None, 'Medivia')
             procID = win32process.GetWindowThreadProcessId(game)
             procID = procID[1]
             process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
             modules = win32process.EnumProcessModules(process_handle)
             base_adr = modules[0]
-            attacked = 0
             while True:
                 if cave_status.checkState() == 0:
                     return
-                for i in range(self.waypoints_list.count()):
+                for i in range(0, self.waypoints_list.count()):
                     numbers = re.sub(r'\D', ' ', self.waypoints_list.item(i).text())
                     wpt = [num for num in numbers.split(' ') if num]
                     self.waypoints_list.setCurrentRow(i)
+                    time.sleep(0.1)
                     while True:
                         if cave_status.checkState() == 0:
                             return
-                        time.sleep(0.1)
                         targetID = read_memory(0xDBEEA8, base_adr, 0, procID)
                         targetID = c.c_ulonglong.from_buffer(targetID).value
                         if targetID == 0:
+                            if attacked == 1:
+                                attacked = 0
+                                time.sleep(4)
                             x = read_memory(0xDBFC48, base_adr, 0, procID)
                             y = read_memory(0xDBFC4C, base_adr, 0, procID)
                             z = read_memory(0xDBFC50, base_adr, 0, procID)
@@ -155,38 +159,71 @@ class CaveTab(QWidget):
                             y = c.c_int.from_buffer(y).value
                             z = c.c_int.from_buffer(z).value
                             if x == int(wpt[0]) and y == int(wpt[1]) and z == int(wpt[2]):
+                                tmp = 0
                                 break
                             else:
                                 myx = int(wpt[0]) - x
                                 myy = int(wpt[1]) - y
-                            if attacked == 1:
-                                time.sleep(4)
-                                attacked = 0
-                                continue
-                            if myy == -1 or myy == -2:
+                                myz = int(wpt[2]) - z
+                            if (myy == -1 or myy == -2) and myx == 0:
                                 win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
                                 win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
                                 continue
-                            if myy == 1 or myy == 2:
+                            if (myy == 1 or myy == 2) and myx == 0:
                                 win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
                                 win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
                                 continue
-                            if myx == -1 or myx == -2:
+                            if (myx == -1 or myx == -2) and myy == 0:
                                 win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
                                 win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
                                 continue
-                            if myx == 1 or myx == 2:
+                            if (myx == 1 or myx == 2) and myy == 0:
                                 win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
                                 win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
                                 continue
-                            if (0 <= abs(myx) <= 7) and (0 <= abs(myy) <= 7) and z == int(wpt[2]):
+                            '''
+                            if myx == -2 and myy == 0:
+                                if abs(myz) == 1:
+                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
+                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
+                                    continue
+                            if myx == 2 and myy == 0:
+                                if abs(myz) == 1:
+                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
+                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
+                                    continue
+                            if myy == -2 and myx == 0:
+                                if abs(myz) == 1:
+                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
+                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
+                                    continue
+                            if myy == 2 and myx == 0:
+                                if abs(myz) == 1:
+                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
+                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
+                                    continue
+                            '''
+                            if tmp >= 12:
+                                continue
+                            if (0 <= abs(myx) <= 6) and (0 <= abs(myy) <= 6) and z == int(wpt[2]):
                                 x = 875 + myx * 70
                                 y = 475 + myy * 70
                                 click_left(x, y, game)
-                                time.sleep(4)
+                                time.sleep(3)
+                                tmp += 3
+                            else:
+                                break
                             break
                         else:
+                            while True:
+                                value = read_memory(0xDBEEA8, base_adr, 0, procID)
+                                value = c.c_ulonglong.from_buffer(value).value
+                                if value == 0:
+                                    time.sleep(0.5)
+                                    break
+                                time.sleep(0.1)
                             attacked = 1
+                            time.sleep(0.5)
 
     def delete_wpt_item(self):
         selected_item = self.waypoints_list.currentItem()
