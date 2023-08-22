@@ -1,3 +1,5 @@
+import cv2
+
 from funkcje import *
 
 
@@ -100,24 +102,24 @@ class TargetTab(QWidget):
                     if value == 0:
                         with lock:
                             img = win_cap.get_screenshot()
-                            hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-                            mask = cv.inRange(hsv, lower, upper)
-                            output = cv.bitwise_and(img, img, mask=mask)
-                            gray = cv.cvtColor(output, cv.COLOR_BGR2GRAY)
-                            thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
-                            combined_list = get_text(thresh)
-                            combined_list = sorted(combined_list, key=distance)
-                            if combined_list:
-                                for monster in combined_list:
-                                    for i in range(self.monster_list.count()):
-                                        if monster[0] == self.monster_list.item(i).text().replace(" ", ""):
-                                            click_right(monster[1] + 525, 1040 - monster[2] - 405 + 150 + 55, game)
-                                            continue_while = False
-                                            time.sleep(0.5)
-                                            break
-                                    if not continue_while:
-                                        continue_while = True
+                        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+                        mask = cv.inRange(hsv, lower, upper)
+                        output = cv.bitwise_and(img, img, mask=mask)
+                        gray = cv.cvtColor(output, cv.COLOR_BGR2GRAY)
+                        thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+                        combined_list = get_text(thresh)
+                        combined_list = sorted(combined_list, key=distance)
+                        if combined_list:
+                            for monster in combined_list:
+                                for i in range(self.monster_list.count()):
+                                    if monster[0] == self.monster_list.item(i).text().replace(" ", ""):
+                                        click_right(monster[1] + 525, 1040 - monster[2] - 405 + 150 + 70, game)
+                                        continue_while = False
+                                        time.sleep(0.1)
                                         break
+                                if not continue_while:
+                                    continue_while = True
+                                    break
 
         monster_thread = Thread(target=list_monsters)
         monster_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits

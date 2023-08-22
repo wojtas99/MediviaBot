@@ -110,7 +110,7 @@ class LootTab(QWidget):
                                         points = merge_close_points(points, 30)
                                         for x in points:
                                             collect_items(x[0] + 1725, x[1] + 325, self.gold_bp_x, self.gold_bp_y, game)
-                                            time.sleep(0.2)
+                                            time.sleep(0.1)
                                 time.sleep(0.2)
                         time.sleep(0.01)
                     time.sleep(0.01)

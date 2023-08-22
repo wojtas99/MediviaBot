@@ -67,7 +67,7 @@ def read_memory(address_read, base_adr, offset, proc_id):
 
 
 def get_text(screenshot):
-    data = pytesseract.image_to_boxes(screenshot)
+    data = pytesseract.image_to_boxes(screenshot, lang='eng')
     new_data = []
     for line in data.splitlines():
         line = line.split(" ", 3)
