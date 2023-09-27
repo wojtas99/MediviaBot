@@ -68,7 +68,7 @@ class LootTab(QWidget):
             savedX = 0
             savedY = 0
             monsterY = 0
-            threshold = 0.8
+            threshold = 0.6
             win_cap = WindowCapture('Medivia', 190, 680, 1730, 350)
             while True:
                 while self.loot_status.checkState() == 2:
