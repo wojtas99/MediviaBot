@@ -108,44 +108,10 @@ def get_text(screenshot):
         tmp = [monsters[i], monsters[i + 1], monsters[i + 2]]
         merged.append(tmp)
     return merged
-'''
-def get_text(screenshot):
-    text = pytesseract.image_to_string(screenshot)
-    data = pytesseract.image_to_boxes(screenshot)
-    text = text.split(" ")
-    blank_text = []
-    for i in text:
-        i = i.split("\n")
-        for s in i:
-            if s != '' and len(s) >= 3:
-                blank_text.append(s)
-    new_text = []
-    for line in blank_text:
-        if line != '':
-            new_text.append(line)
-    new_data = []
-    for line in data.splitlines():
-        line = line.split(" ", 3)
-        if line[0] != '~':
-            new_data.append(line[0:3])
-    k = 0
-    coordinates = []
-    for monster in new_text:
-        monster = "".join(monster.split())
-        height = int(new_data[int(len(monster)/2) + k][1])
-        width = int(new_data[int(len(monster)/2) + k][2])
-        k += len(monster)
-        coordinates.append(height + 290)
-        coordinates.append(1080 - width - 128)
-    print(coordinates)
-    print(new_text)
-    return coordinates, new_text
-'''
 
 
 def distance(points):
     return math.sqrt((int(points[1])-450)**2 + (int(points[2]) - 450)**2)
-
 
 def read_offsets(address, extra_offset, hwnd):
     procID = win32process.GetWindowThreadProcessId(hwnd)

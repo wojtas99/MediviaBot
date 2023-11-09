@@ -1,5 +1,12 @@
 import urllib.request
+
+import cv2
+
 from funkcje import *
+import requests
+from PIL import Image
+from io import BytesIO
+
 
 
 class LootTab(QWidget):
@@ -36,18 +43,25 @@ class LootTab(QWidget):
         self.gold_bp_y = 0
 
         def loot_items():
-            lower = np.array([0, 0, 0])
-            upper = np.array([255, 254, 255])
+            lower = np.array([0, 0, 100])
+            upper = np.array([255, 255, 255])
             f = open('Loot.txt', 'r')
             for item in f:
                 name = item.split('/')[-1]
                 name = name.strip('\n')
-                '''
                 if name.split('.')[-1] == 'gif':
-                    gif = imageio.mimread(item)
-                    img = [cv.cvtColor(img, cv.COLOR_RGB2BGR) for img in gif]
-                    cv.imwrite('Loot/'+name.split('.')[0]+'.png', img[0])
-                '''
+                    gif = requests.get(item)
+                    gif = Image.open(BytesIO(gif.content))
+                    name = name.split('.')[0]
+                    for i in range(0, gif.n_frames):
+                        gif.seek(i)
+                        gif.save('Loot/'+f'{name}'+f'{i}' + '.png', 'PNG')
+                        img = cv.imread('Loot/' + name + f'{i}'+'.png')
+                        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+                        mask = cv.inRange(hsv, lower, upper)
+                        output = cv.bitwise_and(img, img, mask=mask)
+                        cv.imwrite('Loot/' + name + f'{i}'+'.png', output)
+                    break
                 urllib.request.urlretrieve(item, 'Loot/'+name)
                 img = cv.imread('Loot/'+name)
                 hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
@@ -58,6 +72,8 @@ class LootTab(QWidget):
                 self.black_list.addItem(f"{file.split('.')[0]}")
 
         def open_monster():
+            lower = np.array([0, 0, 25])
+            upper = np.array([255, 255, 255])
             game = win32gui.FindWindow(None, 'Medivia')
             procID = win32process.GetWindowThreadProcessId(game)
             procID = procID[1]
@@ -68,7 +84,7 @@ class LootTab(QWidget):
             savedX = 0
             savedY = 0
             monsterY = 0
-            threshold = 0.6
+            threshold = 0.8
             win_cap = WindowCapture('Medivia', 190, 680, 1730, 350)
             while True:
                 while self.loot_status.checkState() == 2:
@@ -101,17 +117,14 @@ class LootTab(QWidget):
                                     screenshot = win_cap.get_screenshot()
                                     item = 'Loot/'f'{self.white_list.item(items).text()}' + '.png'
                                     img = cv.imread(item)
+                                    hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
+                                    mask = cv.inRange(hsv, lower, upper)
+                                    screenshot = cv.bitwise_and(screenshot, screenshot, mask=mask)
                                     result = cv.matchTemplate(screenshot, img, cv.TM_CCOEFF_NORMED)
-                                    rectangles = find_rectangle(result, img, threshold)
-                                    points = find_points(rectangles)
-                                    if points:
-                                        points.sort()
-                                        points.reverse()
-                                        points = merge_close_points(points, 30)
-                                        for x in points:
-                                            collect_items(x[0] + 1725, x[1] + 325, self.gold_bp_x, self.gold_bp_y, game)
-                                            time.sleep(0.1)
-                                time.sleep(0.2)
+                                    result = np.column_stack(np.where(result >= 0.7))
+                                    for loc in result:
+                                        x, y = loc
+                                        collect_items(x + 1740, y + 340, self.gold_bp_x, self.gold_bp_y, game)
                         time.sleep(0.01)
                     time.sleep(0.01)
                 time.sleep(1)
