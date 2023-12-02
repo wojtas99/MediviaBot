@@ -59,12 +59,14 @@ class CaveTab(QWidget):
 
         north = QPushButton("North", self)
         north.setGeometry(241, 20, 40, 25)
+        north.clicked.connect(self.north_add)
 
         action = QPushButton("Action", self)
         action.setGeometry(282, 20, 40, 25)
 
         south = QPushButton("South", self)
         south.setGeometry(241, 46, 40, 25)
+        south.clicked.connect(self.south_add)
 
         west = QPushButton("West", self)
         west.setGeometry(200, 46, 40, 25)
@@ -94,135 +96,62 @@ class CaveTab(QWidget):
         cave_status.stateChanged.connect(start_follow_thread)
 
         def auto_rec():
-            game = win32gui.FindWindow(None, 'Medivia')
-            procID = win32process.GetWindowThreadProcessId(game)
-            procID = procID[1]
-            process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-            modules = win32process.EnumProcessModules(process_handle)
-            base_adr = modules[0]
-            x = read_memory(0xDBFC48, base_adr, 0, procID)
-            y = read_memory(0xDBFC4C, base_adr, 0, procID)
-            z = read_memory(0xDBFC50, base_adr, 0, procID)
-            x = c.c_int.from_buffer(x).value
-            y = c.c_int.from_buffer(y).value
-            z = c.c_int.from_buffer(z).value
-            while True:
-                if auto_rec_box.checkState() == 0:
-                    return
-                new_x = read_memory(0xDBFC48, base_adr, 0, procID)
-                new_y = read_memory(0xDBFC4C, base_adr, 0, procID)
-                new_z = read_memory(0xDBFC50, base_adr, 0, procID)
-                new_x = c.c_int.from_buffer(new_x).value
-                new_y = c.c_int.from_buffer(new_y).value
-                new_z = c.c_int.from_buffer(new_z).value
-                if x != new_x or y != new_y or z != new_z:
-                    self.waypoints_list.addItem('X : 'f'{new_x}  Y : 'f'{new_y}  Z : 'f'{new_z}')
-                    x = read_memory(0xDBFC48, base_adr, 0, procID)
-                    y = read_memory(0xDBFC4C, base_adr, 0, procID)
-                    z = read_memory(0xDBFC50, base_adr, 0, procID)
-                    x = c.c_int.from_buffer(x).value
-                    y = c.c_int.from_buffer(y).value
-                    z = c.c_int.from_buffer(z).value
+            new_x = 0
+            new_y = 0
+            new_z = 0
+            while auto_rec_box.checkState():
+                x = read_memory(my_x, base_adr, 0, procID)
+                y = read_memory(my_y, base_adr, 0, procID)
+                z = read_memory(my_z, base_adr, 0, procID)
+                x = c.c_int.from_buffer(x).value
+                y = c.c_int.from_buffer(y).value
+                z = c.c_int.from_buffer(z).value
+                if (x != new_x or y != new_y) and z == new_z:
+                    self.waypoints_list.addItem('I-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+                if z != new_z:
+                    if y > new_y:
+                        self.waypoints_list.addItem('S-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+                    elif y < new_y:
+                        self.waypoints_list.addItem('N-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+                new_x = x
+                new_y = y
+                new_z = z
                 time.sleep(0.2)
 
         def follow_wpt():
-            tmp = 0
-            attacked = 1
-            game = win32gui.FindWindow(None, 'Medivia')
-            procID = win32process.GetWindowThreadProcessId(game)
-            procID = procID[1]
-            process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-            modules = win32process.EnumProcessModules(process_handle)
-            base_adr = modules[0]
-            while True:
-                if cave_status.checkState() == 0:
-                    return
+            while cave_status.checkState():
                 for i in range(0, self.waypoints_list.count()):
+                    status = self.waypoints_list.item(i).text().split("-")[0]
                     numbers = re.sub(r'\D', ' ', self.waypoints_list.item(i).text())
                     wpt = [num for num in numbers.split(' ') if num]
                     self.waypoints_list.setCurrentRow(i)
-                    time.sleep(0.1)
-                    while True:
-                        if cave_status.checkState() == 0:
-                            return
-                        targetID = read_memory(0xDBEEA8, base_adr, 0, procID)
+                    while cave_status.checkState():
+                        targetID = read_memory(attack, base_adr, 0, procID)
                         targetID = c.c_ulonglong.from_buffer(targetID).value
-                        if targetID == 0:
-                            if attacked == 1:
-                                attacked = 0
-                                time.sleep(4)
-                            x = read_memory(0xDBFC48, base_adr, 0, procID)
-                            y = read_memory(0xDBFC4C, base_adr, 0, procID)
-                            z = read_memory(0xDBFC50, base_adr, 0, procID)
-                            x = c.c_int.from_buffer(x).value
-                            y = c.c_int.from_buffer(y).value
-                            z = c.c_int.from_buffer(z).value
-                            if x == int(wpt[0]) and y == int(wpt[1]) and z == int(wpt[2]):
-                                tmp = 0
-                                break
-                            else:
-                                myx = int(wpt[0]) - x
-                                myy = int(wpt[1]) - y
-                                myz = int(wpt[2]) - z
-                            if (myy == -1 or myy == -2) and myx == 0:
-                                win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
-                                win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
-                                continue
-                            if (myy == 1 or myy == 2) and myx == 0:
-                                win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
-                                win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
-                                continue
-                            if (myx == -1 or myx == -2) and myy == 0:
-                                win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
-                                win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
-                                continue
-                            if (myx == 1 or myx == 2) and myy == 0:
-                                win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
-                                win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
-                                continue
-                            '''
-                            if myx == -2 and myy == 0:
-                                if abs(myz) == 1:
-                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
-                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
-                                    continue
-                            if myx == 2 and myy == 0:
-                                if abs(myz) == 1:
-                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
-                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
-                                    continue
-                            if myy == -2 and myx == 0:
-                                if abs(myz) == 1:
-                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
-                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
-                                    continue
-                            if myy == 2 and myx == 0:
-                                if abs(myz) == 1:
-                                    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
-                                    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
-                                    continue
-                            '''
-                            if tmp >= 12:
-                                continue
-                            if (0 <= abs(myx) <= 6) and (0 <= abs(myy) <= 6) and z == int(wpt[2]):
-                                x = 875 + myx * 70
-                                y = 475 + myy * 70
-                                click_left(x, y, game)
-                                time.sleep(3)
-                                tmp += 3
-                            else:
-                                break
+                        while targetID != 0:
+                            targetID = read_memory(attack, base_adr, 0, procID)
+                            targetID = c.c_ulonglong.from_buffer(targetID).value
+                            time.sleep(2)
+                        time.sleep(0.1)
+                        x = read_memory(my_x, base_adr, 0, procID)
+                        y = read_memory(my_y, base_adr, 0, procID)
+                        z = read_memory(my_z, base_adr, 0, procID)
+                        x = c.c_int.from_buffer(x).value
+                        y = c.c_int.from_buffer(y).value
+                        z = c.c_int.from_buffer(z).value
+                        if x == int(wpt[0]) and y == int(wpt[1]) and z == int(wpt[2]):
                             break
                         else:
-                            while True:
-                                value = read_memory(0xDBEEA8, base_adr, 0, procID)
-                                value = c.c_ulonglong.from_buffer(value).value
-                                if value == 0:
-                                    time.sleep(0.5)
-                                    break
-                                time.sleep(0.1)
-                            attacked = 1
-                            time.sleep(0.5)
+                            if status == 'I':
+                                go_stand(wpt[0], wpt[1], wpt[2], x, y, z)
+                                continue
+                            if status == 'N':
+                                go_north(wpt[0], wpt[1], wpt[2], x, y, z)
+                                continue
+                            if status == 'S':
+                                go_south(wpt[0], wpt[1], wpt[2], x, y, z)
+                                continue
+
 
     def delete_wpt_item(self):
         selected_item = self.waypoints_list.currentItem()
@@ -260,17 +189,28 @@ class CaveTab(QWidget):
             f.close()
 
     def stand_add(self):
-        game = win32gui.FindWindow(None, 'Medivia')
-        procID = win32process.GetWindowThreadProcessId(game)
-        procID = procID[1]
-        process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-        modules = win32process.EnumProcessModules(process_handle)
-        base_adr = modules[0]
-        x = read_memory(0xDBFC48, base_adr, 0, procID)
-        y = read_memory(0xDBFC4C, base_adr, 0, procID)
-        z = read_memory(0xDBFC50, base_adr, 0, procID)
-
+        x = read_memory(my_x, base_adr, 0, procID)
+        y = read_memory(my_y, base_adr, 0, procID)
+        z = read_memory(my_z, base_adr, 0, procID)
         x = c.c_int.from_buffer(x).value
         y = c.c_int.from_buffer(y).value
         z = c.c_int.from_buffer(z).value
-        self.waypoints_list.addItem('X:'f'{x} Y:'f'{y} Z:'f'{z}')
+        self.waypoints_list.addItem('I-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+
+    def north_add(self):
+        x = read_memory(my_x, base_adr, 0, procID)
+        y = read_memory(my_y, base_adr, 0, procID)
+        z = read_memory(my_z, base_adr, 0, procID)
+        x = c.c_int.from_buffer(x).value
+        y = c.c_int.from_buffer(y).value
+        z = c.c_int.from_buffer(z).value
+        self.waypoints_list.addItem('N-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+
+    def south_add(self):
+        x = read_memory(my_x, base_adr, 0, procID)
+        y = read_memory(my_y, base_adr, 0, procID)
+        z = read_memory(my_z, base_adr, 0, procID)
+        x = c.c_int.from_buffer(x).value
+        y = c.c_int.from_buffer(y).value
+        z = c.c_int.from_buffer(z).value
+        self.waypoints_list.addItem('S-X:'f'{x} Y:'f'{y} Z:'f'{z}')

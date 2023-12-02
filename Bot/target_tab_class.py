@@ -6,20 +6,8 @@ from funkcje import *
 class TargetTab(QWidget):
     def __init__(self):
         super().__init__()
-        '''
-        parent_widget = QWidget(self)
-        parent_widget.setStyleSheet(f"background-image: url(background.jpg);")
-        parent_widget.resize(500, 500)
-        '''
-        label = QLabel(self)
-        movie = QMovie("Demon.gif")
-        label.setMovie(movie)
-        label.move(200, 100)
-        movie.start()
-
         text_label = QLabel("Targeting", self)
         text_label.setGeometry(0, 0, 100, 20)
-        # text_label.setStyleSheet("color: yellow")
 
         self.monster_list = QListWidget(self)
         self.monster_list.setGeometry(0, 20, 150, 200)
@@ -73,8 +61,8 @@ class TargetTab(QWidget):
         clear_monsters.setGeometry(66, 220, 40, 25)
         clear_monsters.clicked.connect(self.clear_monster_list)
 
-        self.target_status = QCheckBox(self)
-        self.target_status.move(0, 290)
+        target_status = QCheckBox(self)
+        target_status.move(0, 290)
         target_status_text = QLabel("Start Targeting", self)
         target_status_text.setGeometry(17, 281, 100, 30)
 
@@ -83,21 +71,22 @@ class TargetTab(QWidget):
         follow_monster_status_text = QLabel("Follow Monster", self)
         follow_monster_status_text.setGeometry(17, 311, 100, 30)
 
+        def start_targeting_thread():
+            autorec_thread = Thread(target=list_monsters)
+            autorec_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
+            if target_status.checkState() == 2:
+                autorec_thread.start()
+
+        target_status.stateChanged.connect(start_targeting_thread)
+
         def list_monsters():
             continue_while = True
-            game = win32gui.FindWindow(None, 'Medivia')
-            procID = win32process.GetWindowThreadProcessId(game)
-            procID = procID[1]
-            process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-            modules = win32process.EnumProcessModules(process_handle)
-            base_adr = modules[0]
-            # win_cap = WindowCapture('Medivia', 1130, 840, 300, 78)
             win_cap = WindowCapture('Medivia', 675, 675, 525, 150)
             lower = np.array([9, 180, 150])
             upper = np.array([14, 190, 255])
             while True:
                 if self.target_status.checkState() == 2:
-                    value = read_memory(0xDBEEA8, base_adr, 0, procID)
+                    value = read_memory(attack, base_adr, 0, procID)
                     value = c.c_ulonglong.from_buffer(value).value
                     if value == 0:
                         with lock:
@@ -121,9 +110,7 @@ class TargetTab(QWidget):
                                     continue_while = True
                                     break
 
-        monster_thread = Thread(target=list_monsters)
-        monster_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
-        monster_thread.start()
+
 
     def delete_list(self):
         selected_item = self.save_targeting_list.currentItem()

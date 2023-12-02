@@ -1,97 +1,93 @@
 import urllib.request
-
-import cv2
-
+from rembg import remove
 from funkcje import *
-import requests
-from PIL import Image
-from io import BytesIO
-
 
 
 class LootTab(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.set_gold_bp = QPushButton("Set Gold Backpack", self)
-        self.set_gold_bp.setGeometry(301, 220, 120, 25)
+        self.set_gold_bp = QPushButton("Set Loot Backpack", self)
+        self.set_gold_bp.setGeometry(301, 370, 120, 25)
         self.set_gold_bp.clicked.connect(self.set_gold_backpack)
 
-        self.loot_status = QCheckBox(self)
-        self.loot_status.move(0, 260)
+        loot_status = QCheckBox(self)
+        loot_status.move(0, 260)
         loot_status_text = QLabel("Open Monsters", self)
         loot_status_text.setGeometry(17, 251, 100, 30)
 
-        text_label = QLabel("BlackList", self)
-        text_label.setGeometry(0, 0, 100, 20)
-
+        blackList_label = QLabel("BlackList", self)
+        blackList_label.setGeometry(0, 0, 100, 20)
         self.black_list = QListWidget(self)
-        self.black_list.setGeometry(0, 20, 150, 200)
+        self.black_list.setGeometry(0, 20, 150, 235)
 
-        self.white_list = QListWidget(self)
-        self.white_list.setGeometry(190, 20, 150, 200)
+        collect_label = QLabel("Collect List", self)
+        collect_label.setGeometry(200, 0, 100, 20)
+        self.collect_list = QListWidget(self)
+        self.collect_list.setGeometry(190, 20, 150, 100)
+        add_to_collect = QPushButton("Collect", self)
+        add_to_collect.setGeometry(150, 50, 40, 25)
+        add_to_collect.clicked.connect(self.addToCollectList)
 
-        add_to_loot = QPushButton("Add", self)
-        add_to_loot.setGeometry(150, 100, 40, 25)
-        add_to_loot.clicked.connect(self.add)
+        use_label = QLabel("Use List", self)
+        use_label.setGeometry(200, 120, 100, 20)
+        self.use_list = QListWidget(self)
+        self.use_list.setGeometry(190, 145, 150, 115)
+        add_to_use = QPushButton("Use", self)
+        add_to_use.setGeometry(150, 190, 40, 25)
+        add_to_use.clicked.connect(self.addToUseList)
 
         self.mouse_status = QLabel(self)
-        self.mouse_status.setGeometry(301, 180, 150, 30)
+        self.mouse_status.setGeometry(301, 410, 150, 30)
         self.mouse_status.setStyleSheet('color: red')
 
         self.gold_bp_x = 0
         self.gold_bp_y = 0
 
+        def start_loot_thread():
+            autorec_thread = Thread(target=open_monster)
+            autorec_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
+            if loot_status.checkState() == 2:
+                autorec_thread.start()
+
+        loot_status.stateChanged.connect(start_loot_thread)
+
         def loot_items():
-            lower = np.array([0, 0, 100])
-            upper = np.array([255, 255, 255])
             f = open('Loot.txt', 'r')
+            tmp = 0
             for item in f:
                 name = item.split('/')[-1]
                 name = name.strip('\n')
-                if name.split('.')[-1] == 'gif':
-                    gif = requests.get(item)
-                    gif = Image.open(BytesIO(gif.content))
-                    name = name.split('.')[0]
-                    for i in range(0, gif.n_frames):
-                        gif.seek(i)
-                        gif.save('Loot/'+f'{name}'+f'{i}' + '.png', 'PNG')
-                        img = cv.imread('Loot/' + name + f'{i}'+'.png')
-                        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-                        mask = cv.inRange(hsv, lower, upper)
-                        output = cv.bitwise_and(img, img, mask=mask)
-                        cv.imwrite('Loot/' + name + f'{i}'+'.png', output)
-                    break
+                for files in os.listdir('Loot/'):
+                    tmp = 0
+                    if files == name:
+                        tmp = 1
+                        break
+                if tmp:
+                    continue
                 urllib.request.urlretrieve(item, 'Loot/'+name)
-                img = cv.imread('Loot/'+name)
-                hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-                mask = cv.inRange(hsv, lower, upper)
-                output = cv.bitwise_and(img, img, mask=mask)
-                cv.imwrite('Loot/' + name, output)
+                image1 = Image.open('Loot/'+name)
+                image1 = remove(image1)
+                image1.save('Loot/'+name)
+                image1 = Image.open('Loot/'+name)
+                image2 = Image.open('background.png')
+                image2.paste(image1, (0, 0), image1)
+                image2.save('Loot/'+name)
             for file in os.listdir("Loot"):
                 self.black_list.addItem(f"{file.split('.')[0]}")
 
         def open_monster():
-            lower = np.array([0, 0, 25])
-            upper = np.array([255, 255, 255])
-            game = win32gui.FindWindow(None, 'Medivia')
-            procID = win32process.GetWindowThreadProcessId(game)
-            procID = procID[1]
-            process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-            modules = win32process.EnumProcessModules(process_handle)
-            base_adr = modules[0]
+            win_cap = WindowCapture('Medivia', 190, 680, 1730, 350)
             monsterX = 0
             savedX = 0
             savedY = 0
             monsterY = 0
-            threshold = 0.8
-            win_cap = WindowCapture('Medivia', 190, 680, 1730, 350)
             while True:
-                while self.loot_status.checkState() == 2:
-                    targetID = read_memory(0xDBEEA8, base_adr, 0, procID)
+                while loot_status.checkState() == 2:
+                    targetID = read_memory(attack, base_adr, 0, procID)
                     targetID = c.c_ulonglong.from_buffer(targetID).value
                     while targetID != 0:
-                        targetID = read_memory(0xDBEEA8, base_adr, 0, procID)
+                        targetID = read_memory(attack, base_adr, 0, procID)
                         targetID = c.c_ulonglong.from_buffer(targetID).value
                         savedX = monsterX
                         savedY = monsterY
@@ -99,12 +95,12 @@ class LootTab(QWidget):
                         monsterY = c.c_int.from_buffer(monsterY).value
                         monsterX = read_memory(targetID, 0, 0x38, procID)
                         monsterX = c.c_int.from_buffer(monsterX).value
-                        if monsterX == 0:
+                        if monsterX == 0 or monsterX > 50000:
                             monsterX = savedX
                             monsterY = savedY
-                            x = read_memory(0xDBFC48, base_adr, 0, procID)
+                            x = read_memory(myX, base_adr, 0, procID)
                             x = c.c_int.from_buffer(x).value
-                            y = read_memory(0xDBFC4C, base_adr, 0, procID)
+                            y = read_memory(myY, base_adr, 0, procID)
                             y = c.c_int.from_buffer(y).value
                             x = monsterX - x
                             y = monsterY - y
@@ -112,56 +108,55 @@ class LootTab(QWidget):
                             y = 475 + y * 70
                             click_right(x, y, game)
                             time.sleep(0.1)
-                            for items in range(self.white_list.count()):
-                                with lock:
-                                    screenshot = win_cap.get_screenshot()
-                                    item = 'Loot/'f'{self.white_list.item(items).text()}' + '.png'
-                                    img = cv.imread(item)
-                                    hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
-                                    mask = cv.inRange(hsv, lower, upper)
-                                    screenshot = cv.bitwise_and(screenshot, screenshot, mask=mask)
-                                    result = cv.matchTemplate(screenshot, img, cv.TM_CCOEFF_NORMED)
-                                    result = np.column_stack(np.where(result >= 0.7))
-                                    for loc in result:
-                                        x, y = loc
-                                        collect_items(x + 1740, y + 340, self.gold_bp_x, self.gold_bp_y, game)
-                        time.sleep(0.01)
-                    time.sleep(0.01)
-                time.sleep(1)
-
-        loot_thread = Thread(target=open_monster)
-        loot_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
-        loot_thread.start()
-        loot_items()
+                            for items in range(self.collect_list.count()):
+                                item = 'Loot/'f'{self.collect_list.item(items).text()}' + '.png'
+                                screenshot = win_cap.get_screenshot()
+                                screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
+                                template = cv.imread(item, 0)
+                                res = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
+                                min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
+                                if max_val > 0.85:
+                                    collect_items(max_loc[0] + 1740, max_loc[1] + 336, self.gold_bp_x, self.gold_bp_y - 20, game)
+                                time.sleep(0.1)
+                            for items in range(self.use_list.count()):
+                                item = 'Loot/'f'{self.use_list.item(items).text()}' + '.png'
+                                screenshot = win_cap.get_screenshot()
+                                screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
+                                template = cv.imread(item, 0)
+                                res = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
+                                min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
+                                if max_val > 0.85:
+                                    click_right(max_loc[0] + 1740, max_loc[1] + 336, game)
+                                time.sleep(0.1)
 
     def mouse_cords(self):
-        game = win32gui.FindWindow(None, 'Medivia')
         while True:
             x, y = win32api.GetCursorPos()
             self.mouse_status.setText('x ='f"{x}"'           y = 'f'{y}')
-            time.sleep(0.05)
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
-                self.set_gold_bp.setText("Success")
-                self.set_gold_bp.setStyleSheet("color: green")
                 self.mouse_status.setText("")
                 x, y = win32gui.ScreenToClient(game, (x, y))
                 self.gold_bp_x = x
                 self.gold_bp_y = y
-                time.sleep(5)
-                self.set_gold_bp.setText("Set Gold Backpack")
-                self.set_gold_bp.setStyleSheet("color: black")
+                self.set_gold_bp.setText("GOOD Job")
+                self.set_gold_bp.setStyleSheet("color: green")
                 return
 
     def set_gold_backpack(self):
         self.set_gold_bp.setText("Left-Click on spot")
         self.set_gold_bp.setStyleSheet("color: red")
         mouse_cords_thread = Thread(target=self.mouse_cords)
-        mouse_cords_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
+        mouse_cords_thread.daemon = True
         mouse_cords_thread.start()
         return
 
-    def add(self):
+    def addToCollectList(self, item):
         selected_item = self.black_list.currentItem()
         if selected_item:
-            self.white_list.addItem(self.black_list.item(self.black_list.row(selected_item)).text())
+            self.collect_list.addItem(self.black_list.item(self.black_list.row(selected_item)).text())
+
+    def addToUseList(self):
+        selected_item = self.black_list.currentItem()
+        if selected_item:
+            self.use_list.addItem(self.black_list.item(self.black_list.row(selected_item)).text())
 

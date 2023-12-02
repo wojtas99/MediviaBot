@@ -17,10 +17,22 @@ import numpy as np
 import cv2 as cv
 import os
 import time
-from PyQt5.QtGui import QMovie
+import requests
+from PIL import Image
+from io import BytesIO
 pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Wojciech\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
-
 lock = threading.Lock()
+game = win32gui.FindWindow(None, 'Medivia')
+procID = win32process.GetWindowThreadProcessId(game)
+procID = procID[1]
+process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
+modules = win32process.EnumProcessModules(process_handle)
+base_adr = modules[0]
+attack = 0xDBD828
+
+my_x = 0xDBE5C8
+my_y = 0xDBE5CC
+my_z = 0xDBE5D0
 
 
 def collect_items(loot_x, loot_y, bp_x, bp_y, hwnd):
@@ -28,16 +40,7 @@ def collect_items(loot_x, loot_y, bp_x, bp_y, hwnd):
     win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
     win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(bp_x, bp_y))
     win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(bp_x, bp_y))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
     return
-
-
-def drop_items(loot_x, loot_y, hwnd):
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(loot_x, loot_y))
-    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(845, 468))
-    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(845, 468))
 
 
 def click_right(x, y, hwnd):
@@ -175,3 +178,43 @@ def find_points(rectangles):
     return points
 
 
+def go_stand(wptx, wpty, wptz, x, y, z):
+    myx = int(wptx) - x
+    myy = int(wpty) - y
+    myz = int(wptz) - z
+    if myy == -1 and myx == 0 and myz == 0:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
+        return
+    if myy == 1 and myx == 0 and myz == 0:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
+        return
+    if myx == -1 and myy == 0 and myz == 0:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
+        return
+    if myx == 1 and myy == 0 and myz == 0:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
+        return
+
+
+def go_north(wptx, wpty, wptz, x, y, z):
+    myx = int(wptx) - x
+    myy = int(wpty) - y
+    myz = int(wptz) - z
+    if (myy == -1 or myy == -2) and myx == 0 and abs(myz) <= 1:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
+        return
+
+
+def go_south(wptx, wpty, wptz, x, y, z):
+    myx = int(wptx) - x
+    myy = int(wpty) - y
+    myz = int(wptz) - z
+    if (myy == 1 or myy == 2) and myx == 0 and abs(myz) <= 1:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
+        return
