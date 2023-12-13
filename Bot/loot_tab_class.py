@@ -1,5 +1,9 @@
+import time
 import urllib.request
+from datetime import datetime
+
 from rembg import remove
+
 from funkcje import *
 
 
@@ -27,7 +31,7 @@ class LootTab(QWidget):
         self.collect_list.setGeometry(190, 20, 150, 100)
         add_to_collect = QPushButton("Collect", self)
         add_to_collect.setGeometry(150, 50, 40, 25)
-        add_to_collect.clicked.connect(self.addToCollectList)
+        add_to_collect.clicked.connect(self.add_collect)
 
         use_label = QLabel("Use List", self)
         use_label.setGeometry(200, 120, 100, 20)
@@ -35,7 +39,7 @@ class LootTab(QWidget):
         self.use_list.setGeometry(190, 145, 150, 115)
         add_to_use = QPushButton("Use", self)
         add_to_use.setGeometry(150, 190, 40, 25)
-        add_to_use.clicked.connect(self.addToUseList)
+        add_to_use.clicked.connect(self.add_use)
 
         self.mouse_status = QLabel(self)
         self.mouse_status.setGeometry(301, 410, 150, 30)
@@ -44,15 +48,7 @@ class LootTab(QWidget):
         self.gold_bp_x = 0
         self.gold_bp_y = 0
 
-        def start_loot_thread():
-            autorec_thread = Thread(target=open_monster)
-            autorec_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
-            if loot_status.checkState() == 2:
-                autorec_thread.start()
-
-        loot_status.stateChanged.connect(start_loot_thread)
-
-        def loot_items():
+        def item_list():
             f = open('Loot.txt', 'r')
             tmp = 0
             for item in f:
@@ -76,58 +72,83 @@ class LootTab(QWidget):
             for file in os.listdir("Loot"):
                 self.black_list.addItem(f"{file.split('.')[0]}")
 
+        item_list()
+
+        def start_loot_thread():
+            thread = Thread(target=open_monster)
+            thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
+            if loot_status.checkState() == 2:
+                thread.start()
+
+        loot_status.stateChanged.connect(start_loot_thread)
+
         def open_monster():
             win_cap = WindowCapture('Medivia', 190, 680, 1730, 350)
-            monsterX = 0
             savedX = 0
             savedY = 0
+            monsterX = 0
             monsterY = 0
-            while True:
-                while loot_status.checkState() == 2:
-                    targetID = read_memory(attack, base_adr, 0, procID)
+            loot = 0
+            while loot_status.checkState() == 2:
+                targetID = read_memory(attack, 0)
+                targetID = c.c_ulonglong.from_buffer(targetID).value
+                while targetID != 0:
+                    if loot == 0:
+                        loot = 1
+                    targetID = read_memory(attack, 0)
                     targetID = c.c_ulonglong.from_buffer(targetID).value
-                    while targetID != 0:
-                        targetID = read_memory(attack, base_adr, 0, procID)
-                        targetID = c.c_ulonglong.from_buffer(targetID).value
-                        savedX = monsterX
-                        savedY = monsterY
-                        monsterY = read_memory(targetID, 0, 0x3C, procID)
-                        monsterY = c.c_int.from_buffer(monsterY).value
-                        monsterX = read_memory(targetID, 0, 0x38, procID)
-                        monsterX = c.c_int.from_buffer(monsterX).value
-                        if monsterX == 0 or monsterX > 50000:
-                            monsterX = savedX
-                            monsterY = savedY
-                            x = read_memory(myX, base_adr, 0, procID)
-                            x = c.c_int.from_buffer(x).value
-                            y = read_memory(myY, base_adr, 0, procID)
-                            y = c.c_int.from_buffer(y).value
-                            x = monsterX - x
-                            y = monsterY - y
-                            x = 875 + x * 70
-                            y = 475 + y * 70
-                            click_right(x, y, game)
-                            time.sleep(0.1)
-                            for items in range(self.collect_list.count()):
-                                item = 'Loot/'f'{self.collect_list.item(items).text()}' + '.png'
+                    savedX = monsterX
+                    savedY = monsterY
+                    monsterY = read_memory(targetID - base_adr, 0x3C)
+                    monsterY = c.c_int.from_buffer(monsterY).value
+                    monsterX = read_memory(targetID - base_adr, 0x38)
+                    monsterX = c.c_int.from_buffer(monsterX).value
+                    if monsterX > 60000:
+                        break
+                    time.sleep(0.1)
+                if loot == 1:
+                    loot = 0
+                    time.sleep(0.1)
+                    x = read_memory(my_x, 0)
+                    x = c.c_int.from_buffer(x).value
+                    y = read_memory(my_y, 0)
+                    y = c.c_int.from_buffer(y).value
+                    x = savedX - x
+                    y = savedY - y
+                    x = 855 + x * 70
+                    y = 460 + y * 70
+                    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
+                    win32gui.PostMessage(game, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(x, y))
+                    win32gui.PostMessage(game, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(x, y))
+                    time.sleep(0.2)
+                    for _ in range(3):
+                        for items in range(self.use_list.count()):
+                            item = 'Loot/'f'{self.use_list.item(items).text()}' + '.png'
+                            with lock:
                                 screenshot = win_cap.get_screenshot()
                                 screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
                                 template = cv.imread(item, 0)
-                                res = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
-                                min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
-                                if max_val > 0.85:
-                                    collect_items(max_loc[0] + 1740, max_loc[1] + 336, self.gold_bp_x, self.gold_bp_y - 20, game)
-                                time.sleep(0.1)
-                            for items in range(self.use_list.count()):
-                                item = 'Loot/'f'{self.use_list.item(items).text()}' + '.png'
+                                result = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
+                                locations = list(zip(*(np.where(result >= 0.75))[::-1]))
+                                locations = merge_close_points(locations, 10)
+                                locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
+                                for x, y in locations:
+                                    click_right(int(x) + 1740, int(y) + 336)
+                                    time.sleep(0.1)
+                        for items in range(self.collect_list.count()):
+                            item = 'Loot/'f'{self.collect_list.item(items).text()}' + '.png'
+                            with lock:
                                 screenshot = win_cap.get_screenshot()
                                 screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
                                 template = cv.imread(item, 0)
-                                res = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
-                                min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
-                                if max_val > 0.85:
-                                    click_right(max_loc[0] + 1740, max_loc[1] + 336, game)
-                                time.sleep(0.1)
+                                result = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
+                                locations = list(zip(*(np.where(result >= 0.75))[::-1]))
+                                locations = merge_close_points(locations, 10)
+                                locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
+                                for x, y in locations:
+                                    collect_items(int(x) + 1740, int(y) + 336, self.gold_bp_x, self.gold_bp_y - 20)
+                                    time.sleep(0.1)
+                time.sleep(0.1)
 
     def mouse_cords(self):
         while True:
@@ -145,17 +166,17 @@ class LootTab(QWidget):
     def set_gold_backpack(self):
         self.set_gold_bp.setText("Left-Click on spot")
         self.set_gold_bp.setStyleSheet("color: red")
-        mouse_cords_thread = Thread(target=self.mouse_cords)
-        mouse_cords_thread.daemon = True
-        mouse_cords_thread.start()
+        thread = Thread(target=self.mouse_cords)
+        thread.daemon = True
+        thread.start()
         return
 
-    def addToCollectList(self, item):
+    def add_collect(self, item):
         selected_item = self.black_list.currentItem()
         if selected_item:
             self.collect_list.addItem(self.black_list.item(self.black_list.row(selected_item)).text())
 
-    def addToUseList(self):
+    def add_use(self):
         selected_item = self.black_list.currentItem()
         if selected_item:
             self.use_list.addItem(self.black_list.item(self.black_list.row(selected_item)).text())

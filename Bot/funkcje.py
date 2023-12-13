@@ -1,26 +1,23 @@
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 import math
 import win32gui
 import win32con
 import win32api
 import win32process
-import pytesseract
 import ctypes as c
-from typing import List, Tuple
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 import threading
-from PyQt5.QtWidgets import *
-from window_capture import WindowCapture
 from threading import Thread
+from window_capture import WindowCapture
 import re
-from win32con import VK_LBUTTON
 import numpy as np
 import cv2 as cv
 import os
 import time
 import requests
-from PIL import Image
-from io import BytesIO
-pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Wojciech\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+from win32con import VK_LBUTTON
 lock = threading.Lock()
 game = win32gui.FindWindow(None, 'Medivia')
 procID = win32process.GetWindowThreadProcessId(game)
@@ -28,160 +25,72 @@ procID = procID[1]
 process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
 modules = win32process.EnumProcessModules(process_handle)
 base_adr = modules[0]
-attack = 0xDBD828
 
+attack = 0xDBD828
 my_x = 0xDBE5C8
 my_y = 0xDBE5CC
 my_z = 0xDBE5D0
+maxHp = 0X00DBD820
+maxHpOffsets = [0X538]
+myHpOffsets = [0X530]
+myManaOffsets = [0X568]
 
 
-def collect_items(loot_x, loot_y, bp_x, bp_y, hwnd):
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(loot_x, loot_y))
-    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(bp_x, bp_y))
-    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
-    return
-
-
-def click_right(x, y, hwnd):
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(x, y))
-    win32gui.PostMessage(hwnd, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(x, y))
-    return
-
-
-def click_left(x, y, hwnd):
-    win32gui.PostMessage(hwnd, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
-    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(x, y))
-    win32gui.PostMessage(hwnd, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(x, y))
-    return
-
-
-def read_memory(address_read, base_adr, offset, proc_id):
-    process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, proc_id)
+def read_memory(address_read, offset):
+    process_handler = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
     target_adr = address_read + base_adr + offset
     address = c.c_void_p(target_adr)
     size = c.sizeof(c.c_longlong)
     buffer = c.create_string_buffer(size)
     bytes_read = c.c_size_t()
-    c.windll.kernel32.ReadProcessMemory(process_handle, address, buffer, size, c.byref(bytes_read))
-    c.windll.kernel32.CloseHandle(process_handle)
+    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, size, c.byref(bytes_read))
+    c.windll.kernel32.CloseHandle(process_handler)
     return buffer
 
 
-def get_text(screenshot):
-    data = pytesseract.image_to_boxes(screenshot, lang='eng')
-    new_data = []
-    for line in data.splitlines():
-        line = line.split(" ", 3)
-        if line[0] != '~':
-            new_data.append(line[0:3])
-    monster = []
-    monsters = []
-    height = 0
-    width = 0
-    counter = 0
-    for i in range(0, len(new_data)-1):
-        if abs(int(new_data[i+1][1]) - int(new_data[i][1])) < 20 and abs(int(new_data[i + 1][2]) - int(new_data[i][2])) < 20:
-            monster.append(new_data[i][0])
-            width += int(new_data[i][1])
-            height += int(new_data[i][2])
-            counter += 1
-            if i == len(new_data) - 2:
-                monster.append(new_data[i + 1][0])
-                monsters.append("".join(monster))
-                height = int(height / counter)
-                width = int(width / counter)
-                monsters.append(width)
-                monsters.append(height)
-        else:
-            monster.append(new_data[i][0])
-            monsters.append("".join(monster))
-            if counter != 0:
-                height = int(height / counter)
-                width = int(width / counter)
-            counter = 0
-            monsters.append(width)
-            monsters.append(height)
-            width = 0
-            height = 0
-            monster.clear()
-    merged = []
-    for i in range(0, len(monsters) - 2, 3):
-        tmp = [monsters[i], monsters[i + 1], monsters[i + 2]]
-        merged.append(tmp)
-    return merged
-
-
-def distance(points):
-    return math.sqrt((int(points[1])-450)**2 + (int(points[2]) - 450)**2)
-
-def read_offsets(address, extra_offset, hwnd):
-    procID = win32process.GetWindowThreadProcessId(hwnd)
-    procID = procID[1]
+def read_pointer(address, extra_offset):
     process_handler = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-    modules = win32process.EnumProcessModules(process_handler)
-    moduleBase = modules[0]
-    target_adr = moduleBase + address
+    target_adr = base_adr + address
     address = c.c_void_p(target_adr)
     size = c.sizeof(c.c_longlong)
     buffer = c.create_string_buffer(size)
     bytes_read = c.c_size_t()
     c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, size, c.byref(bytes_read))
-    value = c.c_longlong.from_buffer(buffer).value
-    target_adr = value + extra_offset
+    for offset in extra_offset:
+        address = c.c_ulonglong.from_buffer(buffer).value
+        address += offset
+        address = c.c_void_p(address)
+        c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, size, c.byref(bytes_read))
     c.windll.kernel32.CloseHandle(process_handler)
-    return target_adr
+    return buffer
 
 
-def merge_close_points(points: List[Tuple[float, float]], threshold: float = 0.5) -> List[Tuple[int, int]]:
+def sort_monsters_by_distance(points):
+    return math.sqrt((int(points[0])-450)**2 + (int(points[1]) - 450)**2)
+
+
+def merge_close_points(points, distance_threshold):
     merged_points = []
     merged_indices = set()
+
+    def merge_distance(point1, point2):
+        return np.sqrt(np.sum((point1 - point2)**2))
     for i in range(len(points)):
-        if i in merged_indices:
-            continue
-        x1, y1 = points[i]
-        merged_x, merged_y = x1, y1
-        count = 1
-        for j in range(i + 1, len(points)):
-            if j in merged_indices:
-                continue
-            x2, y2 = points[j]
-            dist = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-            if dist < threshold:
-                merged_x += x2
-                merged_y += y2
-                count += 1
-                merged_indices.add(j)
-        merged_x /= count
-        merged_y /= count
-        merged_points.append((int(merged_x), int(merged_y)))
+        if i not in merged_indices:
+            current_point = points[i]
+            merged_point = np.array(current_point)
+            for j in range(i + 1, len(points)):
+                if merge_distance(np.array(current_point), np.array(points[j])) < distance_threshold:
+                    merged_point = (merged_point + np.array(points[j])) / 2
+                    merged_indices.add(j)
+            merged_points.append(tuple(merged_point))
     return merged_points
 
 
-def find_rectangle(result, monster, threshold=0.5):
-    locations = np.where(result >= threshold)
-    locations = list(zip(*locations[::-1]))
-    rectangles = []
-    for loc in locations:
-        rect = [int(loc[0]), int(loc[1]), monster.shape[1], monster.shape[0]]
-        rectangles.append(rect)
-    return rectangles
-
-
-def find_points(rectangles):
-    points = []
-    for (x, y, w, h) in rectangles:
-        center_x = x + int(w / 2)
-        center_y = y + int(h / 2)
-        points.append((center_x, center_y))
-    return points
-
-
-def go_stand(wptx, wpty, wptz, x, y, z):
-    myx = int(wptx) - x
-    myy = int(wpty) - y
-    myz = int(wptz) - z
+def go_stand(monster_x, monster_y, monster_z, x, y, z):
+    myx = int(monster_x) - x
+    myy = int(monster_y) - y
+    myz = int(monster_z) - z
     if myy == -1 and myx == 0 and myz == 0:
         win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
         win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
@@ -200,21 +109,81 @@ def go_stand(wptx, wpty, wptz, x, y, z):
         return
 
 
-def go_north(wptx, wpty, wptz, x, y, z):
-    myx = int(wptx) - x
-    myy = int(wpty) - y
-    myz = int(wptz) - z
-    if (myy == -1 or myy == -2) and myx == 0 and abs(myz) <= 1:
+def go_north(monster_x, monster_y, monster_z, x, y, z):
+    myx = int(monster_x) - x
+    myy = int(monster_y) - y
+    myz = int(monster_z) - z
+    if ((myy == -1 or myy == -2) or (myy == 0 and myx == 0)) and abs(myz) <= 1:
         win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
         win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
         return
 
 
-def go_south(wptx, wpty, wptz, x, y, z):
-    myx = int(wptx) - x
-    myy = int(wpty) - y
-    myz = int(wptz) - z
-    if (myy == 1 or myy == 2) and myx == 0 and abs(myz) <= 1:
+def go_south(monster_x, monster_y, monster_z, x, y, z):
+    myx = int(monster_x) - x
+    myy = int(monster_y) - y
+    myz = int(monster_z) - z
+    if (myy == 1 or myy == 2) and abs(myz) <= 1:
         win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
         win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
         return
+
+
+def go_west(monster_x, monster_y, monster_z, x, y, z):
+    myx = int(monster_x) - x
+    myy = int(monster_y) - y
+    myz = int(monster_z) - z
+    if (myx == -1 or myx == -2) and abs(myz) <= 1:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
+        return
+
+
+def go_east(monster_x, monster_y, monster_z, x, y, z):
+    myx = int(monster_x) - x
+    myy = int(monster_y) - y
+    myz = int(monster_z) - z
+    if (myx == 1 or myx == 2) and abs(myz) <= 1:
+        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
+        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
+        return
+
+
+def collect_items(loot_x, loot_y, bp_x, bp_y):
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(loot_x, loot_y))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(bp_x, bp_y))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
+    return
+
+
+def click_right(x, y):
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(x, y))
+    return
+
+
+def click_left(x, y):
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(x, y))
+    return
+
+
+def use_on_myself(x, y):
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(845, 460))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(845, 460))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(845, 460))
+    return
+
+
+def press_hotkey(hotkey):
+    win32gui.PostMessage(game, win32con.WM_KEYDOWN, 111+hotkey, 0x003B0001)
+    win32gui.PostMessage(game, win32con.WM_KEYUP, 111+hotkey, 0x003B0001)
+    return
+
+

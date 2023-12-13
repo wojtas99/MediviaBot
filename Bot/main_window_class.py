@@ -1,4 +1,5 @@
 from funkcje import *
+from healing_tab_class import HealingTab
 from rune_tab_class import RuneTab
 from cave_tab_class import CaveTab
 from target_tab_class import TargetTab
@@ -14,8 +15,9 @@ class MainWindow(QWidget):
         tab = QTabWidget(self)
         tab.addTab(TargetTab(), "Monster Targeting")
         tab.addTab(CaveTab(), "CaveBot")
-        tab.addTab(RuneTab(), "RuneMaker")
+        tab.addTab(HealingTab(), "Healing")
         tab.addTab(LootTab(), "Loot")
+        tab.addTab(RuneTab(), "RuneMaker")
         vbox = QVBoxLayout(self)
         vbox.addWidget(tab)
         self.setLayout(vbox)

@@ -1,4 +1,5 @@
 import time
+
 from funkcje import *
 
 
@@ -79,69 +80,116 @@ class CaveTab(QWidget):
         auto_rec_box = QCheckBox(self)
         auto_rec_box.move(0, 290)
 
-        def start_auto_rec_thread():
-            autorec_thread = Thread(target=auto_rec)
-            autorec_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
+        def auto_rec_thread():
+            thread = Thread(target=auto_rec)
+            thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
             if auto_rec_box.checkState() == 2:
-                autorec_thread.start()
+                thread.start()
 
-        auto_rec_box.stateChanged.connect(start_auto_rec_thread)
+        auto_rec_box.stateChanged.connect(auto_rec_thread)
 
-        def start_follow_thread():
-            follow_wpt_thread = Thread(target=follow_wpt)
-            follow_wpt_thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
+        def follow_wpt_thread():
+            thread = Thread(target=follow_wpt)
+            thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
             if cave_status.checkState() == 2:
-                follow_wpt_thread.start()
+                thread.start()
 
-        cave_status.stateChanged.connect(start_follow_thread)
+        cave_status.stateChanged.connect(follow_wpt_thread)
 
         def auto_rec():
-            new_x = 0
-            new_y = 0
-            new_z = 0
+            x = read_memory(my_x, 0)
+            y = read_memory(my_y, 0)
+            z = read_memory(my_z, 0)
+            x = c.c_int.from_buffer(x).value
+            y = c.c_int.from_buffer(y).value
+            z = c.c_int.from_buffer(z).value
+            self.waypoints_list.addItem('I-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+            new_x = x
+            new_y = y
+            new_z = z
             while auto_rec_box.checkState():
-                x = read_memory(my_x, base_adr, 0, procID)
-                y = read_memory(my_y, base_adr, 0, procID)
-                z = read_memory(my_z, base_adr, 0, procID)
+                x = read_memory(my_x, 0)
+                y = read_memory(my_y, 0)
+                z = read_memory(my_z, 0)
                 x = c.c_int.from_buffer(x).value
                 y = c.c_int.from_buffer(y).value
                 z = c.c_int.from_buffer(z).value
                 if (x != new_x or y != new_y) and z == new_z:
                     self.waypoints_list.addItem('I-X:'f'{x} Y:'f'{y} Z:'f'{z}')
                 if z != new_z:
-                    if y > new_y:
+                    if y > new_y and x == new_x:
                         self.waypoints_list.addItem('S-X:'f'{x} Y:'f'{y} Z:'f'{z}')
-                    elif y < new_y:
+                    if y <= new_y and x == new_x:
                         self.waypoints_list.addItem('N-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+                    if x > new_x:
+                        self.waypoints_list.addItem('E-X:'f'{x} Y:'f'{y} Z:'f'{z}')
+                    if x < new_x:
+                        self.waypoints_list.addItem('W-X:'f'{x} Y:'f'{y} Z:'f'{z}')
                 new_x = x
                 new_y = y
                 new_z = z
                 time.sleep(0.2)
 
         def follow_wpt():
+            timer = 0
+            waypoint_count = self.waypoints_list.count()
             while cave_status.checkState():
-                for i in range(0, self.waypoints_list.count()):
+                i = 0
+                while i < waypoint_count:
                     status = self.waypoints_list.item(i).text().split("-")[0]
                     numbers = re.sub(r'\D', ' ', self.waypoints_list.item(i).text())
                     wpt = [num for num in numbers.split(' ') if num]
                     self.waypoints_list.setCurrentRow(i)
+                    i += 1
                     while cave_status.checkState():
-                        targetID = read_memory(attack, base_adr, 0, procID)
+                        targetID = read_memory(attack, 0)
                         targetID = c.c_ulonglong.from_buffer(targetID).value
                         while targetID != 0:
-                            targetID = read_memory(attack, base_adr, 0, procID)
+                            targetID = read_memory(attack, 0)
                             targetID = c.c_ulonglong.from_buffer(targetID).value
                             time.sleep(2)
                         time.sleep(0.1)
-                        x = read_memory(my_x, base_adr, 0, procID)
-                        y = read_memory(my_y, base_adr, 0, procID)
-                        z = read_memory(my_z, base_adr, 0, procID)
+                        x = read_memory(my_x, 0)
+                        y = read_memory(my_y, 0)
+                        z = read_memory(my_z, 0)
                         x = c.c_int.from_buffer(x).value
                         y = c.c_int.from_buffer(y).value
                         z = c.c_int.from_buffer(z).value
                         if x == int(wpt[0]) and y == int(wpt[1]) and z == int(wpt[2]):
+                            timer = 0
                             break
                         else:
+                            timer += 1
+                            if timer > 50:
+                                for k in range(0, self.waypoints_list.count()):
+                                    i = k
+                                    numbers = re.sub(r'\D', ' ', self.waypoints_list.item(i).text())
+                                    wpt = [num for num in numbers.split(' ') if num]
+                                    self.waypoints_list.setCurrentRow(i)
+                                    x = read_memory(my_x, 0)
+                                    y = read_memory(my_y, 0)
+                                    z = read_memory(my_z, 0)
+                                    x = c.c_int.from_buffer(x).value
+                                    y = c.c_int.from_buffer(y).value
+                                    z = c.c_int.from_buffer(z).value
+                                    if (abs(x - int(wpt[0])) <= 4) and (abs(y - int(wpt[1]))) <= 4 and z == int(wpt[2]):
+                                        myx = int(wpt[0]) - x
+                                        myy = int(wpt[1]) - y
+                                        myx = 875 + myx * 70
+                                        myy = 475 + myy * 70
+                                        click_left(myx, myy)
+                                        timer = 0
+                                        time.sleep(5)
+                                        break
+                                    time.sleep(0.1)
+                            if 20 <= timer < 50:
+                                myx = int(wpt[0]) - x
+                                myy = int(wpt[1]) - y
+                                myx = 875 + myx * 70
+                                myy = 475 + myy * 70
+                                click_left(myx, myy)
+                                timer += 20
+                                time.sleep(3)
                             if status == 'I':
                                 go_stand(wpt[0], wpt[1], wpt[2], x, y, z)
                                 continue
@@ -151,7 +199,12 @@ class CaveTab(QWidget):
                             if status == 'S':
                                 go_south(wpt[0], wpt[1], wpt[2], x, y, z)
                                 continue
-
+                            if status == 'E':
+                                go_east(wpt[0], wpt[1], wpt[2], x, y, z)
+                                continue
+                            if status == 'W':
+                                go_west(wpt[0], wpt[1], wpt[2], x, y, z)
+                                continue
 
     def delete_wpt_item(self):
         selected_item = self.waypoints_list.currentItem()
@@ -189,27 +242,27 @@ class CaveTab(QWidget):
             f.close()
 
     def stand_add(self):
-        x = read_memory(my_x, base_adr, 0, procID)
-        y = read_memory(my_y, base_adr, 0, procID)
-        z = read_memory(my_z, base_adr, 0, procID)
+        x = read_memory(my_x, 0)
+        y = read_memory(my_y, 0)
+        z = read_memory(my_z, 0)
         x = c.c_int.from_buffer(x).value
         y = c.c_int.from_buffer(y).value
         z = c.c_int.from_buffer(z).value
         self.waypoints_list.addItem('I-X:'f'{x} Y:'f'{y} Z:'f'{z}')
 
     def north_add(self):
-        x = read_memory(my_x, base_adr, 0, procID)
-        y = read_memory(my_y, base_adr, 0, procID)
-        z = read_memory(my_z, base_adr, 0, procID)
+        x = read_memory(my_x, 0)
+        y = read_memory(my_y, 0)
+        z = read_memory(my_z, 0)
         x = c.c_int.from_buffer(x).value
         y = c.c_int.from_buffer(y).value
         z = c.c_int.from_buffer(z).value
         self.waypoints_list.addItem('N-X:'f'{x} Y:'f'{y} Z:'f'{z}')
 
     def south_add(self):
-        x = read_memory(my_x, base_adr, 0, procID)
-        y = read_memory(my_y, base_adr, 0, procID)
-        z = read_memory(my_z, base_adr, 0, procID)
+        x = read_memory(my_x, 0)
+        y = read_memory(my_y, 0)
+        z = read_memory(my_z, 0)
         x = c.c_int.from_buffer(x).value
         y = c.c_int.from_buffer(y).value
         z = c.c_int.from_buffer(z).value
