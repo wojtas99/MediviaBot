@@ -4,6 +4,113 @@ from funkcje import *
 class TargetTab(QWidget):
     def __init__(self, parent=None):
         super(TargetTab, self).__init__(parent)
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
+        self.groupbox1()
+        self.groupbox2()
+        self.groupbox3()
+    def groupbox1(self):
+
+        groupbox = QGroupBox("Save&&Load Targeting")
+        groupbox_layout = QVBoxLayout()
+        groupbox.setLayout(groupbox_layout)
+
+        #Buttons
+        save_targetingList_button = QPushButton("Save")
+        save_targetingList_button.clicked.connect(self.save_monster_list)
+
+        load_targetingList_button = QPushButton("Load")
+        load_targetingList_button.clicked.connect(self.load_monster_list)
+
+        delete_targetingList_button = QPushButton("Del")
+        delete_targetingList_button.clicked.connect(self.delete_list)
+
+        #Labels
+        targetingList_label = QLabel("Name:", self)
+
+        #Edit Lines
+        targetingList_line = QLineEdit()
+
+        #List Widgets
+        targetingList_widget = QListWidget(self)
+        for file in os.listdir("Targeting"):
+            targetingList_widget.addItem(f"{file.split('.')[0]}")
+
+
+        layout1 = QHBoxLayout()
+        layout1.addWidget(targetingList_label)
+        layout1.addWidget(targetingList_line)
+
+        layout2 = QHBoxLayout()
+        layout2.addWidget(delete_targetingList_button)
+        layout2.addWidget(save_targetingList_button)
+        layout2.addWidget(load_targetingList_button)
+
+        groupbox_layout.addWidget(targetingList_widget)
+        groupbox_layout.addLayout(layout1)
+        groupbox_layout.addLayout(layout2)
+        self.layout.addWidget(groupbox, 1, 1, alignment=Qt.AlignBottom | Qt.AlignRight)
+        groupbox.setFixedSize(150, 150)
+
+    def groupbox2(self):
+        groupbox = QGroupBox("Targeting List")
+        groupbox_layout = QVBoxLayout()
+        groupbox.setLayout(groupbox_layout)
+        # Buttons
+        left = QPushButton("<", self)
+        left.clicked.connect(self.go_left)
+
+        right = QPushButton(">", self)
+        right.clicked.connect(self.go_right)
+
+        del_monster = QPushButton("Del", self)
+        del_monster.clicked.connect(self.delete_monster)
+
+        clear_monsters = QPushButton("Clear", self)
+        clear_monsters.clicked.connect(self.clear_monster_list)
+        # List Widgets
+        targeting_list_Widget = QListWidget(self)
+
+        layout1 = QHBoxLayout()
+        layout1.addWidget(left)
+        layout1.addWidget(right)
+        layout1.addWidget(del_monster)
+        layout1.addWidget(clear_monsters)
+
+        groupbox_layout.addWidget(targeting_list_Widget)
+        groupbox_layout.addLayout(layout1)
+
+        self.layout.addWidget(groupbox)
+        groupbox.setFixedSize(150, 250)
+        self.layout.addWidget(groupbox, 0, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
+
+    def groupbox3(self):
+        groupbox = QGroupBox("Define Monster")
+        groupbox_layout = QVBoxLayout()
+        groupbox.setLayout(groupbox_layout)
+        # Buttons
+        add_monster = QPushButton("Add", self)
+        add_monster.setFixedSize(50,20)
+        add_monster.clicked.connect(self.create_monster)
+        # Labels
+        targetingList_label = QLabel("Name:", self)
+
+        # Edit Lines
+        targetingList_line = QLineEdit()
+
+        # List Widgets
+        layout1 = QHBoxLayout()
+        layout1.addWidget(targetingList_label)
+        layout1.addWidget(targetingList_line)
+        layout1.addWidget(add_monster)
+
+        groupbox_layout.addLayout(layout1)
+
+        self.layout.addWidget(groupbox)
+        self.layout.addWidget(groupbox, 0, 1, alignment=Qt.AlignTop | Qt.AlignLeft)
+        groupbox.setFixedSize(200, 80)
+
+        '''
         # Labels
         targeting_list_label = QLabel("Targeting List", self)
         targeting_list_label.setGeometry(0, 0, 200, 20)
@@ -11,40 +118,16 @@ class TargetTab(QWidget):
         monster_name = QLabel("Monster ", self)
         monster_name.setGeometry(160, 20, 50, 20)
 
-        save_targeting_text = QLabel("Name", self)
-        save_targeting_text.setGeometry(301, 400, 100, 20)
-
-        save_targeting_text = QLabel("Name", self)
-        save_targeting_text.setGeometry(301, 400, 100, 20)
-
         # List Widgets
         self.targeting_list_ListWidget = QListWidget(self)
         self.targeting_list_ListWidget.setGeometry(0, 20, 150, 200)
 
-        self.save_targeting_list = QListWidget(self)
-        self.save_targeting_list.setGeometry(300, 320, 120, 80)
-        for file in os.listdir("Targeting"):
-            self.save_targeting_list.addItem(f"{file.split('.')[0]}")
-
         # Line Edits
-        self.save_targeting_textfield = QLineEdit(self)
-        self.save_targeting_textfield.setGeometry(335, 401, 85, 20)
 
         self.textfield = QLineEdit(self)
         self.textfield.setGeometry(210, 20, 100, 20)
 
         # Push Buttons
-        self.save_targeting_button = QPushButton("Save", self)
-        self.save_targeting_button.setGeometry(334, 421, 41, 20)
-        self.save_targeting_button.clicked.connect(self.save_monster_list)
-
-        self.load_targeting_button = QPushButton("Load", self)
-        self.load_targeting_button.setGeometry(380, 421, 41, 20)
-        self.load_targeting_button.clicked.connect(self.load_monster_list)
-
-        self.delete_targeting_button = QPushButton("Del", self)
-        self.delete_targeting_button.setGeometry(299, 421, 31, 20)
-        self.delete_targeting_button.clicked.connect(self.delete_list)
 
         add_monster = QPushButton("Add", self)
         add_monster.setGeometry(209, 40, 40, 25)
@@ -76,6 +159,7 @@ class TargetTab(QWidget):
         target_status.move(0, 420)
         target_status_text = QLabel("Start Targeting", self)
         target_status_text.setGeometry(17, 411, 100, 30)
+        '''
 
         def list_monsters_thread():
             fnt = ImageFont.truetype("./Tahoma.ttf", 15)
@@ -92,7 +176,7 @@ class TargetTab(QWidget):
                     draw.rectangle([(10, 10), (150, 30)], fill=background_color)
                 thread.start()
 
-        target_status.stateChanged.connect(list_monsters_thread)
+        #target_status.stateChanged.connect(list_monsters_thread)
 
         def list_monsters():
             win_cap = WindowCapture('Medivia', 675, 675, 525, 150)
@@ -171,4 +255,3 @@ class TargetTab(QWidget):
 
     def go_left(self):
         self.monster_list.setCurrentRow(self.monster_list.currentRow() - 1)
-
