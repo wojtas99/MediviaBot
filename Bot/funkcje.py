@@ -66,7 +66,7 @@ def read_pointer(address, extra_offset):
 
 
 def sort_monsters_by_distance(points):
-    return math.sqrt((int(points[0])-450)**2 + (int(points[1]) - 450)**2)
+    return math.sqrt((int(points[0])-450)**2 + (int(points[1]) - 350)**2)
 
 
 def merge_close_points(points, distance_threshold):

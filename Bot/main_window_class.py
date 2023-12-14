@@ -9,7 +9,8 @@ from loot_tab_class import LootTab
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.resize(500, 500)
+        self.setWindowIcon(QIcon('Icon.jpg'))
+        self.resize(400, 500)
         #  Title and Size
         self.setWindowTitle("EasyBot")
         tab = QTabWidget(self)
