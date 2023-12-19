@@ -18,32 +18,34 @@ import os
 import time
 import requests
 from win32con import VK_LBUTTON
-lock = threading.Lock()
+
+
+attack = 0xDB77E8
+my_x = 0xDB8588
+my_y = 0xDB858C
+my_z = 0xDB8590
+maxHp = 0x00DB77E0
+maxHpOffsets = [0x538]
+myHpOffsets = [0x530]
+myManaOffsets = [0x568]
+nickname = 0xDB7738
+
 game = win32gui.FindWindow(None, 'Medivia')
+lock = threading.Lock()
 procID = win32process.GetWindowThreadProcessId(game)
 procID = procID[1]
 process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
 modules = win32process.EnumProcessModules(process_handle)
 base_adr = modules[0]
 
-attack = 0xDBD828
-my_x = 0xDBE5C8
-my_y = 0xDBE5CC
-my_z = 0xDBE5D0
-maxHp = 0X00DBD820
-maxHpOffsets = [0X538]
-myHpOffsets = [0X530]
-myManaOffsets = [0X568]
-
 
 def read_memory(address_read, offset):
     process_handler = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
     target_adr = address_read + base_adr + offset
     address = c.c_void_p(target_adr)
-    size = c.sizeof(c.c_longlong)
-    buffer = c.create_string_buffer(size)
+    buffer = c.create_string_buffer(256)
     bytes_read = c.c_size_t()
-    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, size, c.byref(bytes_read))
+    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, 256, c.byref(bytes_read))
     c.windll.kernel32.CloseHandle(process_handler)
     return buffer
 
@@ -52,21 +54,26 @@ def read_pointer(address, extra_offset):
     process_handler = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
     target_adr = base_adr + address
     address = c.c_void_p(target_adr)
-    size = c.sizeof(c.c_longlong)
-    buffer = c.create_string_buffer(size)
+    buffer = c.create_string_buffer(256)
     bytes_read = c.c_size_t()
-    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, size, c.byref(bytes_read))
+    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, 256, c.byref(bytes_read))
     for offset in extra_offset:
         address = c.c_ulonglong.from_buffer(buffer).value
         address += offset
         address = c.c_void_p(address)
-        c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, size, c.byref(bytes_read))
+        c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, 256, c.byref(bytes_read))
     c.windll.kernel32.CloseHandle(process_handler)
     return buffer
 
 
+nickname = read_memory(nickname, 0)
+nickname = nickname.value
+nickname = nickname.decode('utf-8')
+win32gui.SetWindowText(game, "Medivia - " + nickname)
+
+
 def sort_monsters_by_distance(points):
-    return math.sqrt((int(points[0])-450)**2 + (int(points[1]) - 350)**2)
+    return math.sqrt((int(points[0])-300)**2 + (int(points[1]) - 252)**2)
 
 
 def merge_close_points(points, distance_threshold):
@@ -154,6 +161,9 @@ def collect_items(loot_x, loot_y, bp_x, bp_y):
     win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
     win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(bp_x, bp_y))
     win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(bp_x, bp_y))
+    win32gui.PostMessage(game, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(bp_x, bp_y))
+    win32gui.PostMessage(game, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(bp_x, bp_y))
     return
 
 
@@ -185,5 +195,22 @@ def press_hotkey(hotkey):
     win32gui.PostMessage(game, win32con.WM_KEYDOWN, 111+hotkey, 0x003B0001)
     win32gui.PostMessage(game, win32con.WM_KEYUP, 111+hotkey, 0x003B0001)
     return
+
+
+def antyIdle():
+    win32gui.PostMessage(game, win32con.WM_KEYDOWN, win32con.VK_CONTROL, 0x011D0001)
+    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
+    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
+    time.sleep(0.2)
+    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
+    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
+    time.sleep(0.2)
+    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
+    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
+    time.sleep(0.2)
+    win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
+    win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
+    win32gui.PostMessage(game, win32con.WM_KEYUP, win32con.VK_CONTROL, 0xC11D0001)
+
 
 

@@ -157,8 +157,8 @@ class LootTab(QWidget):
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
                 self.mouse_status.setText("")
                 x, y = win32gui.ScreenToClient(game, (x, y))
-                self.gold_bp_x = x
-                self.gold_bp_y = y
+                gold_bp_x = x
+                gold_bp_y = y
                 self.set_gold_bp.setText("GOOD Job")
                 self.set_gold_bp.setStyleSheet("color: green")
                 return

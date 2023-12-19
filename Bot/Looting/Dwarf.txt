@@ -1,0 +1,3 @@
+GoldCoin | c
+White_Mushroom | c
+Steel_Helmet | c

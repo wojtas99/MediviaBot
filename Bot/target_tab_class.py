@@ -1,9 +1,13 @@
+import time
+import urllib
+from urllib import request
 from funkcje import *
 
 
 class TargetTab(QWidget):
     def __init__(self, parent=None):
         super(TargetTab, self).__init__(parent)
+
         # Variables
         self.startLoot_checkBox = None
         self.startTarget_checkBox = None
@@ -17,24 +21,26 @@ class TargetTab(QWidget):
 
         self.layout = QGridLayout()
         self.setLayout(self.layout)
+        # Functions
         self.groupbox1()
         self.groupbox2()
         self.groupbox3()
         self.groupbox4()
+        self.addItemfromURL()
 
-    def groupbox1(self):
+    def groupbox1(self) -> None:
         groupbox = QGroupBox("Save&&Load Targeting")
         groupbox_layout = QVBoxLayout()
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
-        save_targetingProfile_button = QPushButton("Save")
-        save_targetingProfile_button.clicked.connect(self.save_targetingProfile)
+        saveTargetingProfile_button = QPushButton("Save")
+        saveTargetingProfile_button.clicked.connect(self.saveTargetingProfile)
 
-        load_targetingProfile_button = QPushButton("Load")
-        load_targetingProfile_button.clicked.connect(self.load_targetingProfile)
+        loadTargetingProfile_button = QPushButton("Load")
+        loadTargetingProfile_button.clicked.connect(self.loadTargetingProfile)
 
-        delete_targetingProfile_button = QPushButton("Del")
+        deleteTargetingProfile_button = QPushButton("Del")
 
         # Labels
         targetingProfile_label = QLabel("Name:", self)
@@ -50,11 +56,11 @@ class TargetTab(QWidget):
         # QHBox
         layout1 = QHBoxLayout()
         layout1.addWidget(targetingProfile_label)
-        layout1.addWidget( self.targetingProfile_line)
+        layout1.addWidget(self.targetingProfile_line)
         layout2 = QHBoxLayout()
-        layout2.addWidget(save_targetingProfile_button)
-        layout2.addWidget(load_targetingProfile_button)
-        layout2.addWidget(delete_targetingProfile_button)
+        layout2.addWidget(saveTargetingProfile_button)
+        layout2.addWidget(loadTargetingProfile_button)
+        layout2.addWidget(deleteTargetingProfile_button)
 
         # Add Layouts
         groupbox_layout.addWidget(self.targetingProfile_listWidget)
@@ -63,7 +69,7 @@ class TargetTab(QWidget):
         self.layout.addWidget(groupbox, 1, 0)
         groupbox.setFixedWidth(150)
 
-    def groupbox2(self):
+    def groupbox2(self) -> None:
         groupbox = QGroupBox("Targeting List")
         groupbox_layout = QVBoxLayout()
         groupbox.setLayout(groupbox_layout)
@@ -71,17 +77,17 @@ class TargetTab(QWidget):
         # Buttons
         left_button = QPushButton("<", self)
         left_button.setFixedWidth(20)
-        left_button.clicked.connect(self.monster_up)
+        left_button.clicked.connect(self.monsterUp)
 
         right_button = QPushButton(">", self)
         right_button.setFixedWidth(20)
-        right_button.clicked.connect(self.monster_down)
+        right_button.clicked.connect(self.monsterDown)
 
-        del_monster_button = QPushButton("Del", self)
-        del_monster_button.clicked.connect(self.delete_monster)
+        deleteMonster_button = QPushButton("Del", self)
+        deleteMonster_button.clicked.connect(self.deleteMonster)
 
-        clear_monsterList_button = QPushButton("Clear", self)
-        clear_monsterList_button.clicked.connect(self.clear_monsterList)
+        clearMonsterList_button = QPushButton("Clear", self)
+        clearMonsterList_button.clicked.connect(self.clearMonsterList)
 
         # List Widgets
         self.targeting_listWidget = QListWidget(self)
@@ -90,8 +96,8 @@ class TargetTab(QWidget):
         layout1 = QHBoxLayout()
         layout1.addWidget(left_button)
         layout1.addWidget(right_button)
-        layout1.addWidget(del_monster_button)
-        layout1.addWidget(clear_monsterList_button)
+        layout1.addWidget(deleteMonster_button)
+        layout1.addWidget(clearMonsterList_button)
 
         # Add Layouts
         groupbox_layout.addWidget(self.targeting_listWidget)
@@ -99,7 +105,7 @@ class TargetTab(QWidget):
         groupbox.setFixedSize(150, 250)
         self.layout.addWidget(groupbox, 0, 0)
 
-    def groupbox3(self):
+    def groupbox3(self) -> None:
         groupbox = QGroupBox("Define Monster")
         groupbox_layout = QVBoxLayout()
         groupbox.setLayout(groupbox_layout)
@@ -107,12 +113,14 @@ class TargetTab(QWidget):
         # Buttons
         addMonster_button = QPushButton("Add", self)
         addMonster_button.setFixedWidth(50)
-        addMonster_button.clicked.connect(self.add_monster)
+        addMonster_button.clicked.connect(self.addMonster)
 
         # Check Boxes
         self.startLoot_checkBox = QCheckBox(self)
+        self.startLoot_checkBox.setFixedWidth(15)
         self.startTarget_checkBox = QCheckBox(self)
-        self.startTarget_checkBox.stateChanged.connect(self.create_monsterImages)
+        self.startTarget_checkBox.setFixedWidth(15)
+        self.startTarget_checkBox.stateChanged.connect(self.createMonsterImages)
 
         # Labels
         targetingList_label = QLabel("Name:", self)
@@ -139,19 +147,19 @@ class TargetTab(QWidget):
         groupbox.setFixedSize(200, 80)
         self.layout.addWidget(groupbox, 0, 1, alignment=Qt.AlignTop | Qt.AlignLeft)
 
-    def groupbox4(self):
+    def groupbox4(self) -> None:
         groupbox = QGroupBox("Looting")
         groupbox_layout = QVBoxLayout()
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
-        add_item_button = QPushButton("Add", self)
-        add_item_button.setFixedWidth(40)
-        add_item_button.clicked.connect(self.add_item)
+        addItem_button = QPushButton("Add", self)
+        addItem_button.setFixedWidth(40)
+        addItem_button.clicked.connect(self.addItem)
 
-        delete_item_button = QPushButton("Del", self)
-        delete_item_button.clicked.connect(self.delete_item)
-        delete_item_button.setFixedWidth(40)
+        deleteItem_button = QPushButton("Del", self)
+        deleteItem_button.clicked.connect(self.deleteItem)
+        deleteItem_button.setFixedWidth(40)
 
         # Edit Lines
         self.itemName_line = QLineEdit()
@@ -166,8 +174,8 @@ class TargetTab(QWidget):
         layout1 = QHBoxLayout()
         layout1.addWidget(self.itemName_line)
         layout1.addWidget(self.itemOption_line)
-        layout1.addWidget(add_item_button)
-        layout1.addWidget(delete_item_button)
+        layout1.addWidget(addItem_button)
+        layout1.addWidget(deleteItem_button)
 
         # Add Layouts
         groupbox_layout.addWidget(self.looting_listWidget)
@@ -175,8 +183,32 @@ class TargetTab(QWidget):
         groupbox.setFixedWidth(200)
         self.layout.addWidget(groupbox, 1, 1)
 
+    # Add Items from url to looting_listWidget
+    def addItemfromURL(self) -> None:
+        tmp = 0
+        f = open('Loot.txt', 'r')
+        for item in f:
+            name = item.split('/')[-1]
+            name = name.strip('\n')
+            for files in os.listdir('Loot/'):
+                tmp = 0
+                if files == name:
+                    tmp = 1
+                    break
+            if tmp:
+                continue
+            urllib.request.urlretrieve(item, 'Loot/'+name)
+            image1 = Image.open('Loot/'+name)
+            image1.save('Loot/'+name)
+            image1 = Image.open('Loot/'+name)
+            image2 = Image.open('background.png')
+            image1 = image1.convert('RGBA')
+            image2 = image2.convert('RGBA')
+            image2.paste(image1, (0, 0), image1)
+            image2.save('Loot/'+name)
+
     # Add Item To looting_listWidget
-    def add_item(self):
+    def addItem(self) -> None:
         item_name = self.itemName_line.text()
         item_option = self.itemOption_line.text()
         if item_name and item_option:
@@ -185,29 +217,29 @@ class TargetTab(QWidget):
             self.itemOption_line.clear()
 
     # Delete Item from looting_listWidget
-    def delete_item(self):
+    def deleteItem(self) -> None:
         selected_item = self.looting_listWidget.currentItem()
         if selected_item:
             self.looting_listWidget.takeItem(self.looting_listWidget.row(selected_item))
 
     # Add Monster To targeting_listWidget
-    def add_monster(self):
+    def addMonster(self) -> None:
         monster_name = self.monsterName_line.text()
         if monster_name:
             self.targeting_listWidget.addItem(monster_name)
             self.monsterName_line.clear()
 
     # Delete Monster from targeting_listWidget
-    def delete_monster(self):
+    def deleteMonster(self) -> None:
         selected_monster = self.targeting_listWidget.currentItem()
         if selected_monster:
             self.targeting_listWidget.takeItem(self.targeting_listWidget.row(selected_monster))
 
     # Clear Monster List in  targeting_listWidget
-    def clear_monsterList(self):
+    def clearMonsterList(self) -> None:
         self.targeting_listWidget.clear()
 
-    def monster_down(self):
+    def monsterDown(self) -> None:
         selected = self.targeting_listWidget.currentRow()
         if 0 <= selected < self.targeting_listWidget.count() - 1:
             monster_name = self.targeting_listWidget.item(selected).text()
@@ -215,7 +247,7 @@ class TargetTab(QWidget):
             self.targeting_listWidget.item(selected + 1).setText(monster_name)
             self.targeting_listWidget.setCurrentRow(selected + 1)
 
-    def monster_up(self):
+    def monsterUp(self) -> None:
         selected = self.targeting_listWidget.currentRow()
         if selected > 0:
             monster_name = self.targeting_listWidget.item(selected).text()
@@ -224,7 +256,7 @@ class TargetTab(QWidget):
             self.targeting_listWidget.setCurrentRow(selected - 1)
 
     # Add Target Profile To targetingProfile_listWidget
-    def save_targetingProfile(self):
+    def saveTargetingProfile(self) -> None:
         profile_name = self.targetingProfile_line.text()
         if profile_name:
             f = open("Targeting/"f"{profile_name}.txt", "w")
@@ -237,7 +269,7 @@ class TargetTab(QWidget):
             self.targetingProfile_line.clear()
 
     # Load Target Profile To targeting_listWidget
-    def load_targetingProfile(self):
+    def loadTargetingProfile(self) -> None:
         self.targeting_listWidget.clear()
         selected_item = self.targetingProfile_listWidget.currentItem().text()
         if selected_item:
@@ -254,7 +286,8 @@ class TargetTab(QWidget):
                     self.looting_listWidget.addItem(item.split("\n")[0])
             f.close()
 
-    def create_monsterImages(self):
+    # Create an Image from monster names
+    def createMonsterImages(self) -> None:
         fnt = ImageFont.truetype("./Tahoma.ttf", 15)
         background_color = (0, 0, 0)
         if self.startTarget_checkBox.checkState() == 2:
@@ -264,18 +297,20 @@ class TargetTab(QWidget):
                 draw.multiline_text((0, 0), self.targeting_listWidget.item(i).text(), font=fnt, fill=(219, 127, 62))
                 opencv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
                 cv.imwrite('Monsters/'+self.targeting_listWidget.item(i).text()+'.png', opencv_image)
-            thread = Thread(target=self.attack_monsters)
+            thread = Thread(target=self.attackMonsters)
             thread.daemon = True
             thread.start()
 
-    def attack_monsters(self):
-        win_cap_target = WindowCapture('Medivia', 675, 675, 525, 150)
-        win_cap_loot = WindowCapture('Medivia', 190, 680, 1730, 350)
+    # Target monsters
+    def attackMonsters(self) -> None:
+        win_cap_target = WindowCapture('Medivia - ' + nickname, 675, 675, 525, 150)
+        win_cap_loot = WindowCapture('Medivia - ' + nickname, 190, 680, 1730, 350)
         bgr_color = np.uint8([[[138, 148, 255]]])
         hsv_color = cv.cvtColor(bgr_color, cv.COLOR_BGR2HSV)
         lower = np.array([hsv_color[0][0][0] - 10, 180, 145])
         upper = np.array([hsv_color[0][0][0] + 10, 185, 255])
         loot = 0
+        timer = 0
         savedX = 0
         savedY = 0
         while self.startTarget_checkBox.checkState() == 2:
@@ -307,8 +342,15 @@ class TargetTab(QWidget):
                             monsterY = c.c_int.from_buffer(monsterY).value
                             monsterX = read_memory(targetID - base_adr, 0x38)
                             monsterX = c.c_int.from_buffer(monsterX).value
+                            if 15 <= timer:
+                                timer = 0
+                                win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_ESCAPE, 0x01480001)
+                                win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_ESCAPE, 0x01480001)
+                                break
+                            timer += 0.1
                             time.sleep(0.1)
                         if loot and self.startLoot_checkBox.checkState() == 2:
+                            timer = 0
                             loot = 0
                             x = read_memory(my_x, 0)
                             x = c.c_int.from_buffer(x).value
@@ -320,34 +362,39 @@ class TargetTab(QWidget):
                             y = 460 + y * 70
                             click_right(x, y)
                             time.sleep(0.2)
-                            for item_index in range(0, self.looting_listWidget.count()):
-                                item_name = self.looting_listWidget.item(item_index).text().split('|')[0][:-1]
-                                option = self.looting_listWidget.item(item_index).text().split('|')[1][1:]
-                                file_name = [x for x in os.listdir('Loot/') if x.split('.')[0] == item_name]
-                                if '.png' in file_name[0]:
-                                    screenshot = win_cap_loot.get_screenshot()
-                                    screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
-                                    template = cv.imread('Loot/'f'{item_name}' + '.png', 0)
-                                    result = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
-                                    locations = list(zip(*(np.where(result >= 0.75))[::-1]))
-                                    locations = merge_close_points(locations, 15)
-                                    locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
-                                    for x, y in locations:
-                                        if option == 'u':
-                                            click_right(int(x) + 1740, int(y) + 336)
-                                            time.sleep(0.15)
-                                elif file_name:
-                                    for item_name in os.listdir('Loot/' + file_name[0]):
+                            for _ in range(0, 2):
+                                for item_index in range(0, self.looting_listWidget.count()):
+                                    item_name = self.looting_listWidget.item(item_index).text().split('|')[0][:-1]
+                                    option = self.looting_listWidget.item(item_index).text().split('|')[1][1:]
+                                    file_name = [x for x in os.listdir('Loot/') if x.split('.')[0] == item_name]
+                                    if '.png' in file_name[0]:
                                         screenshot = win_cap_loot.get_screenshot()
-                                        screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
-                                        template = cv.imread('Loot/'f'{file_name[0]}''/' + item_name, 0)
+                                        template = cv.imread('Loot/'f'{item_name}' + '.png')
                                         result = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
-                                        locations = list(zip(*(np.where(result >= 0.75))[::-1]))
+                                        locations = list(zip(*(np.where(result >= 0.85))[::-1]))
                                         locations = merge_close_points(locations, 15)
                                         locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
                                         for x, y in locations:
                                             if option == 'u':
                                                 click_right(int(x) + 1740, int(y) + 336)
                                                 time.sleep(0.15)
+                                            else:
+                                                collect_items(int(x) + 1740, int(y) + 336, 1630, 340)
+                                                time.sleep(0.15)
+                                    elif file_name:
+                                        for item_name in os.listdir('Loot/' + file_name[0]):
+                                            screenshot = win_cap_loot.get_screenshot()
+                                            template = cv.imread('Loot/'f'{file_name[0]}''/' + item_name)
+                                            result = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
+                                            locations = list(zip(*(np.where(result >= 0.85))[::-1]))
+                                            locations = merge_close_points(locations, 15)
+                                            locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
+                                            for x, y in locations:
+                                                if option == 'u':
+                                                    click_right(int(x) + 1740, int(y) + 336)
+                                                    time.sleep(0.15)
+                                                else:
+                                                    collect_items(int(x) + 1740, int(y) + 336, 1680, 350)
+                                                    time.sleep(0.15)
                 time.sleep(0.1)
 

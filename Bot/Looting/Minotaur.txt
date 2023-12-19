@@ -1,1 +1,3 @@
-GoldCoin | u
+GoldCoin | c
+meat | u
+Minotaur_Hoof | c
