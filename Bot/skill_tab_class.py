@@ -180,7 +180,6 @@ class SkillTab(QWidget):
             click_right(self.fishingRodX, self.fishingRodY)
             click_left(self.waterX, self.waterY)
             self.bait += 1
-            print(self.bait)
             time.sleep(random.uniform(1.0, 1.1))
             if self.bait >= 1010:
                 self.bait = 0
