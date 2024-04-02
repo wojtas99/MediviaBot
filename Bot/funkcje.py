@@ -20,15 +20,16 @@ import requests
 from win32con import VK_LBUTTON
 
 
-attack = 0xDB77E8
-my_x = 0xDB8588
-my_y = 0xDB858C
-my_z = 0xDB8590
-maxHp = 0x00DB77E0
-maxHpOffsets = [0x538]
-myHpOffsets = [0x530]
-myManaOffsets = [0x568]
-nickname = 0xDB7738
+attack = 0xBEC920
+myX = 0xBED9A0
+myY = 0xBED9A4
+myZ = 0xBED9A8
+myStats = 0x00BEC918
+myHP_offset = [0x558]
+myHP_MAX_offset = [0x560]
+myMP_offset = [0x590]
+myMP_MAX_offset = [0x598]
+myName = 0xBEC870
 
 game = win32gui.FindWindow(None, 'Medivia')
 lock = threading.Lock()
@@ -66,7 +67,7 @@ def read_pointer(address, extra_offset):
     return buffer
 
 
-nickname = read_memory(nickname, 0)
+nickname = read_memory(myName, 0)
 nickname = nickname.value
 nickname = nickname.decode('utf-8')
 win32gui.SetWindowText(game, "Medivia - " + nickname)

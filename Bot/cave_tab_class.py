@@ -186,9 +186,9 @@ class CaveTab(QWidget):
 
     # Thread that record our waypoints
     def recordWaypoints(self) -> None:
-        x = read_memory(my_x, 0)
-        y = read_memory(my_y, 0)
-        z = read_memory(my_z, 0)
+        x = read_memory(myX, 0)
+        y = read_memory(myY, 0)
+        z = read_memory(myZ, 0)
         x = c.c_int.from_buffer(x).value
         y = c.c_int.from_buffer(y).value
         z = c.c_int.from_buffer(z).value
@@ -197,9 +197,9 @@ class CaveTab(QWidget):
         new_y = y
         new_z = z
         while self.recordCaveBot_checkBox.checkState():
-            x = read_memory(my_x, 0)
-            y = read_memory(my_y, 0)
-            z = read_memory(my_z, 0)
+            x = read_memory(myX, 0)
+            y = read_memory(myY, 0)
+            z = read_memory(myZ, 0)
             x = c.c_int.from_buffer(x).value
             y = c.c_int.from_buffer(y).value
             z = c.c_int.from_buffer(z).value
@@ -240,12 +240,12 @@ class CaveTab(QWidget):
                 targetID = read_memory(attack, 0)
                 targetID = c.c_ulonglong.from_buffer(targetID).value
                 time.sleep(2)
-            x = read_memory(my_x, 0)
-            y = read_memory(my_y, 0)
-            z = read_memory(my_z, 0)
+            x = read_memory(myX, 0)
+            y = read_memory(myY, 0)
+            z = read_memory(myZ, 0)
             x = c.c_int.from_buffer(x).value
             y = c.c_int.from_buffer(y).value
-            z = c.c_int.from_buffer(z).value
+            z = c.c_short.from_buffer(z).value
             if x == int(wpt[0]) and y == int(wpt[1]) and z == int(wpt[2]):
                 timer = 0
                 i += 1

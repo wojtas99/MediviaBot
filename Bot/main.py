@@ -3,6 +3,7 @@ from healing_tab_class import HealingTab
 from skill_tab_class import SkillTab
 from cave_tab_class import CaveTab
 from target_tab_class import TargetTab
+from loot_tab_class import LootTab
 
 
 class MainWindow(QWidget):
@@ -16,6 +17,7 @@ class MainWindow(QWidget):
         tab.addTab(TargetTab(), "Monster Targeting")
         tab.addTab(CaveTab(), "CaveBot")
         tab.addTab(HealingTab(), "Healing")
+        #tab.addTab(LootTab(), "Loot")
         tab.addTab(SkillTab(), "Skill&&Fishing")
         vbox = QVBoxLayout(self)
         vbox.addWidget(tab)

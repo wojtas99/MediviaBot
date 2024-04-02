@@ -352,9 +352,9 @@ class TargetTab(QWidget):
                         if loot and self.startLoot_checkBox.checkState() == 2:
                             timer = 0
                             loot = 0
-                            x = read_memory(my_x, 0)
+                            x = read_memory(myX, 0)
                             x = c.c_int.from_buffer(x).value
-                            y = read_memory(my_y, 0)
+                            y = read_memory(myY, 0)
                             y = c.c_int.from_buffer(y).value
                             x = savedX - x
                             y = savedY - y

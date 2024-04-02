@@ -109,9 +109,9 @@ class LootTab(QWidget):
                 if loot == 1:
                     loot = 0
                     time.sleep(0.1)
-                    x = read_memory(my_x, 0)
+                    x = read_memory(myX, 0)
                     x = c.c_int.from_buffer(x).value
-                    y = read_memory(my_y, 0)
+                    y = read_memory(myY, 0)
                     y = c.c_int.from_buffer(y).value
                     x = savedX - x
                     y = savedY - y
