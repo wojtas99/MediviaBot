@@ -1,4 +1,4 @@
-from funkcje import *
+from Functions import *
 
 
 class CaveTab(QWidget):

@@ -19,7 +19,7 @@ import time
 import requests
 from win32con import VK_LBUTTON
 
-
+# Global variables
 attack = 0xBEC920
 myX = 0xBED9A0
 myY = 0xBED9A4
@@ -30,6 +30,12 @@ myHP_MAX_offset = [0x560]
 myMP_offset = [0x590]
 myMP_MAX_offset = [0x598]
 myName = 0xBEC870
+screenX = [0] * 2
+screenY = [0] * 2
+screenWidth = [0] * 2
+screenHeight = [0] * 2
+bpX = [0] * 12
+bpY = [0] * 12
 
 game = win32gui.FindWindow(None, 'Medivia')
 lock = threading.Lock()

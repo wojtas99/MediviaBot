@@ -1,6 +1,6 @@
 import random
 
-from funkcje import *
+from Functions import *
 
 
 class SkillTab(QWidget):
