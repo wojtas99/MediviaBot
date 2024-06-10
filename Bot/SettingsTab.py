@@ -1,3 +1,5 @@
+import win32gui
+
 from Functions import *
 
 
@@ -218,6 +220,8 @@ class LootTab(QWidget):
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
                 self.screen_label.setStyleSheet("color: black")
                 self.screen_label.setText("Set")
+                screenX[id], screenY[id] = win32gui.ScreenToClient(game, (screenX[id], screenY[id]))
+                screenWidth[id], screenHeight[id] = win32gui.ScreenToClient(game, (screenWidth[id], screenHeight[id]))
                 return
 
     def chooseBP_Thread(self, id):

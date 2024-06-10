@@ -191,7 +191,7 @@ class SkillTab(QWidget):
                 mana = mana[5:]
                 mana = float(mana)
                 hotkey = item.split(':')[1]
-                myMana = read_pointer(myStats, myMP_offset)
+                myMana = read_pointer(myStatsPtr, myMPOffset)
                 myMana = c.c_double.from_buffer(myMana).value
                 if len(hotkey) <= 3:
                     hotkey = hotkey[1:]

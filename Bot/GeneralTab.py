@@ -22,6 +22,10 @@ class GeneralTab(QWidget):
         self.itemOption_line = QLineEdit(self)
         self.itemOption_line.setFixedWidth(20)
         self.itemOption_line.setMaxLength(2)
+        self.hpFrom_line = QLineEdit(self)
+        self.hpTo_line = QLineEdit(self)
+        self.hpFrom_line.setMaxLength(3)
+        self.hpTo_line.setMaxLength(2)
 
         # List Widgets
         self.generalProfile_listWidget = QListWidget(self)
@@ -130,23 +134,30 @@ class GeneralTab(QWidget):
         layout1 = QHBoxLayout(self)
         layout2 = QHBoxLayout(self)
         layout3 = QHBoxLayout(self)
+        layout4 = QHBoxLayout(self)
 
         # Add Widgets
         layout1.addWidget(self.monsterName_line)
         layout1.addWidget(addMonster_button)
-        layout2.addWidget(QLabel("Use Rune:", self))
-        layout2.addWidget(self.runeList_comboBox)
-        layout3.addWidget(QLabel("Attack Distance:", self))
-        layout3.addWidget(self.attackDist_comboBox)
+        layout2.addWidget(QLabel("Attack Distance:", self))
+        layout2.addWidget(self.attackDist_comboBox)
+        layout3.addWidget(QLabel("Use Rune:", self))
+        layout3.addWidget(self.runeList_comboBox)
+        layout4.addWidget(QLabel("From:", self))
+        layout4.addWidget(self.hpFrom_line)
+        layout4.addWidget(QLabel("% To:", self))
+        layout4.addWidget(self.hpTo_line)
+        layout4.addWidget(QLabel("%", self))
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
         groupbox_layout.addLayout(layout3)
+        groupbox_layout.addLayout(layout4)
         self.layout.addWidget(groupbox, 0, 1, 1, 1)
 
     def start(self):
-        groupbox = QGroupBox("Start Target")
+        groupbox = QGroupBox("Start")
         groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
@@ -214,12 +225,20 @@ class GeneralTab(QWidget):
     def addMonster(self) -> None:
         monster_name = self.monsterName_line.text()
         for index in range(self.targetList_listWidget.count()):
-            if monster_name == self.targetList_listWidget.item(index).text():
+            if monster_name == self.targetList_listWidget.item(index).text().split(' | ')[0]:
                 self.monsterName_line.clear()
                 return
         if monster_name:
-            self.targetList_listWidget.addItem(monster_name)
+            if self.attackDist_comboBox.currentText():
+                monster_name += ' | ' + self.attackDist_comboBox.currentText()
+            if self.runeList_comboBox.currentText() and self.hpFrom_line.text() and self.hpTo_line.text():
+                monster_name += ' | ' + self.runeList_comboBox.currentText() + ' ' + self.hpFrom_line.text() + '-' + self.hpTo_line.text()
+            self.runeList_comboBox.setCurrentIndex(0)
+            self.attackDist_comboBox.setCurrentIndex(0)
             self.monsterName_line.clear()
+            self.hpFrom_line.clear()
+            self.hpTo_line.clear()
+            self.targetList_listWidget.addItem(monster_name)
 
     def deleteMonster(self) -> None:
         selected_monster = self.targetList_listWidget.currentItem()
@@ -244,6 +263,7 @@ class GeneralTab(QWidget):
 
     def loadProfile(self) -> None:
         self.targetList_listWidget.clear()
+        self.looting_listWidget.clear()
         selected_item = self.generalProfile_listWidget.currentItem().text()
         if selected_item:
             f = open(
@@ -276,9 +296,9 @@ class GeneralTab(QWidget):
     # Target monsters
     def attackMonsters(self) -> None:
         win_cap_target = WindowCapture('Medivia - ' + nickname, screenWidth[0] - screenX[0],
-                                       screenHeight[0] - screenY[0], screenX[0] + 10, screenY[0] + 10)
+                                       screenHeight[0] - screenY[0], screenX[0] + 10, screenY[0] + 25)
         win_cap_loot = WindowCapture('Medivia - ' + nickname, screenWidth[1] - screenX[1],
-                                     screenHeight[1] - screenY[1], screenX[1] - 20, screenY[1])
+                                     screenHeight[1] - screenY[1], screenX[1], screenY[1])
         bgr_color = np.uint8([[[138, 148, 255]]])
         hsv_color = cv.cvtColor(bgr_color, cv.COLOR_BGR2HSV)
         lower = np.array([hsv_color[0][0][0] - 10, 180, 145])
@@ -289,7 +309,33 @@ class GeneralTab(QWidget):
         savedY = 0
         while self.startTarget_checkBox.checkState() == 2:
             for monster_index in range(self.targetList_listWidget.count()):
-                monster_name = self.targetList_listWidget.item(monster_index).text()
+                monster = self.targetList_listWidget.item(monster_index).text()
+                count = 0
+                monsterHp = ''
+                monsterHpFrom = 0
+                monsterHpTo = 0
+                for i in monster:
+                    if i == '|':
+                        count = count + 1
+                monster_name = monster.split(' | ')[0]
+                if count > 0:
+                    monster_dist = monster.split(' | ')[1]
+                    if count > 1:
+                        monster_dist = int(monster_dist)
+                        monster_rune = monster.split(' | ')[2]
+                        monsterHp = monster_rune.split(' ')[1]
+                        monster_rune = monster_rune.split(' ')[0]
+                        monsterHpFrom = int(monsterHp.split('-')[0])
+                        monsterHpTo = int(monsterHp.split('-')[1])
+                    elif len(monster_dist) > 1 and count == 1:
+                        monster_rune = monster.split(' | ')[1]
+                        monsterHp = monster_rune.split(' ')[1]
+                        monster_rune = monster_rune.split(' ')[0]
+                        monsterHpFrom = int(monsterHp.split('-')[0])
+                        monsterHpTo = int(monsterHp.split('-')[1])
+                        monster_dist = 0
+                    else:
+                        monster_dist = int(monster_dist)
                 if [x for x in os.listdir('Monsters/') if x.split('.')[0] == monster_name]:
                     img = win_cap_target.get_screenshot()
                     hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
@@ -305,7 +351,8 @@ class GeneralTab(QWidget):
                         targetID = read_memory(attack, 0)
                         targetID = c.c_ulonglong.from_buffer(targetID).value
                         if not targetID:
-                            click_right(int(monsterX) + screenX[0] + 30, int(monsterY) + screenY[0] + 40)
+                            click_right(int(monsterX) + screenX[0] + int((screenWidth[0] - screenX[0]) / 22),
+                                        int(monsterY) + screenY[0] + int((screenHeight[0] - screenY[0]) / 9))
                         while targetID:
                             loot = 1
                             targetID = read_memory(attack, 0)
@@ -332,44 +379,52 @@ class GeneralTab(QWidget):
                             y = c.c_int.from_buffer(y).value
                             x = savedX - x
                             y = savedY - y
-                            x = int((screenWidth[0] + screenX[0] + 10) / 2) + x * 70
-                            y = int((screenHeight[0] + screenY[0] + 10) / 2) + y * 70
-                            click_right(x, y)
-                            time.sleep(0.2)
+                            box = int((screenWidth[0] - screenX[0])/15.5)
+                            x = int((screenWidth[0] + screenX[0] + 10) / 2) + x * box
+                            y = int((screenHeight[0] + screenY[0] + 25) / 2) + y * box
+                            containers = read_pointer(containerPtr, containerOffset)
+                            containers = c.c_int.from_buffer(containers).value
+                            tmp = read_pointer(containerPtr, containerOffset)
+                            tmp = c.c_int.from_buffer(tmp).value
+                            while tmp == containers:
+                                click_right(x, y)
+                                time.sleep(0.2)
+                                tmp = read_pointer(containerPtr, containerOffset)
+                                tmp = c.c_int.from_buffer(tmp).value
                             for _ in range(0, 2):
                                 for item_index in range(0, self.looting_listWidget.count()):
                                     item_name = self.looting_listWidget.item(item_index).text().split('|')[0][:-1]
                                     option = self.looting_listWidget.item(item_index).text().split('|')[1][1:]
                                     file_name = [x for x in os.listdir('Loot/') if x.split('.')[0] == item_name]
+                                    screenshot = win_cap_loot.get_screenshot()
                                     if file_name:
                                         if '.png' in file_name[0]:
-                                            screenshot = win_cap_loot.get_screenshot()
                                             template = cv.imread('Loot/'f'{item_name}' + '.png')
                                             result = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
                                             locations = list(zip(*(np.where(result >= 0.85))[::-1]))
                                             locations = merge_close_points(locations, 15)
                                             locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
+                                            locations = [[int(x), int(y)] for x, y in locations]
                                             for x, y in locations:
                                                 if 'c' in option or option == 'c':
                                                     index = 0
                                                     if len(option) > 1:
                                                         index = int(option[1])
-                                                    collect_items(int(x) + screenX[1] + 20, int(y) + screenY[1] - 14, bpX[index], bpY[index])
+                                                    collect_items(x + screenX[1], y + screenY[1], bpX[index], bpY[index])
                                                     time.sleep(0.15)
                                         else:
                                             for item_name in os.listdir('Loot/' + file_name[0]):
-                                                screenshot = win_cap_loot.get_screenshot()
                                                 template = cv.imread('Loot/'f'{file_name[0]}''/' + item_name)
                                                 result = cv.matchTemplate(screenshot, template, cv.TM_CCOEFF_NORMED)
                                                 locations = list(zip(*(np.where(result >= 0.85))[::-1]))
                                                 locations = merge_close_points(locations, 15)
-                                                locations = sorted(locations, key=lambda point: (point[1], point[0]),
-                                                                   reverse=True)
+                                                locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
+                                                locations = [[int(x), int(y)] for x, y in locations]
                                                 for x, y in locations:
                                                     if 'c' in option or option == 'c':
                                                         index = 0
                                                         if len(option) > 1:
                                                             index = int(option[1])
-                                                        collect_items(int(x) + screenX[1] + 20, int(y) + screenY[1] - 14, bpX[index], bpY[index])
+                                                        collect_items(x + screenX[1], y + screenY[1], bpX[index], bpY[index])
                                                         time.sleep(0.15)
                 time.sleep(0.1)

@@ -1,5 +1,5 @@
 from Functions import *
-from healing_tab_class import HealingTab
+from HealingTab import HealingTab
 from TrainingTab import SkillTab
 from WalkerTab import CaveTab
 from GeneralTab import GeneralTab
@@ -40,10 +40,10 @@ class MainWindow(QWidget):
         #  Title and Size
         self.setWindowTitle("EasyBot - " + nickname)
         tab = QTabWidget(self)
-        tab.addTab(GeneralTab(), "General")
-        tab.addTab(CaveTab(), "CaveBot")
-        #tab.addTab(HealingTab(), "Healing&&Attack")
-        #tab.addTab(SkillTab(), "Skill&&Fishing")
+        tab.addTab(GeneralTab(), "Target&&Loot")
+        tab.addTab(CaveTab(), "Walker")
+        tab.addTab(HealingTab(), "Healing&&Attack")
+        #tab.addTab(SkillTab(), "Training")
         tab.addTab(LootTab(), "Settings")
         vbox = QVBoxLayout(self)
         vbox.addWidget(tab)

@@ -2,34 +2,40 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import math
-import win32gui
-import win32con
-import win32api
-import win32process
+import win32api, win32process, win32con, win32gui, win32ui
 import ctypes as c
 from PIL import Image, ImageFont, ImageDraw
 import threading
 from threading import Thread
-from window_capture import WindowCapture
 import re
-import numpy as np
 import cv2 as cv
+import numpy as np
 import os
 import time
 import requests
 from win32con import VK_LBUTTON
 
-# Global variables
-attack = 0xBEC920
+
+
+
+# Static addresses
 myX = 0xBED9A0
 myY = 0xBED9A4
 myZ = 0xBED9A8
-myStats = 0x00BEC918
-myHP_offset = [0x558]
-myHP_MAX_offset = [0x560]
-myMP_offset = [0x590]
-myMP_MAX_offset = [0x598]
 myName = 0xBEC870
+attack = 0xBEC920
+
+# Pointers
+myStatsPtr = 0x00BEC918
+myHPOffset = [0x558]
+myHPMAXOffset = [0x560]
+myMPOffset = [0x590]
+myMPMAXOffset = [0x598]
+
+containerPtr = 0x00C6FDD0
+containerOffset = [0XE8, 0X2B0, 0X0, 0X1D8, 0XEA8]
+
+# Global variables
 screenX = [0] * 2
 screenY = [0] * 2
 screenWidth = [0] * 2
@@ -218,6 +224,46 @@ def antyIdle():
     win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
     win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
     win32gui.PostMessage(game, win32con.WM_KEYUP, win32con.VK_CONTROL, 0xC11D0001)
+
+
+
+
+
+class WindowCapture:
+    w = 0
+    h = 0
+    hwnd = None
+
+    def __init__(self, window_name, w, h, x, y):
+        self.hwnd = win32gui.FindWindow(None, window_name)
+        if not self.hwnd:
+            raise Exception('Window not found: {}'.format(window_name))
+        self.w = w
+        self.h = h
+        self.x = x
+        self.y = y
+
+    def get_screenshot(self):
+        # get the window image data
+        wDC = win32gui.GetWindowDC(self.hwnd)
+        dcObj = win32ui.CreateDCFromHandle(wDC)
+        cDC = dcObj.CreateCompatibleDC()
+        dataBitMap = win32ui.CreateBitmap()
+        dataBitMap.CreateCompatibleBitmap(dcObj, self.w, self.h)
+        cDC.SelectObject(dataBitMap)
+        cDC.BitBlt((0, 0), (self.w, self.h), dcObj, (self.x, self.y), win32con.SRCCOPY)
+        # convert the raw data into a format opencv can read
+        signedIntsArray = dataBitMap.GetBitmapBits(True)
+        img = np.fromstring(signedIntsArray, dtype='uint8')
+        img.shape = (self.h, self.w, 4)
+        dcObj.DeleteDC()
+        cDC.DeleteDC()
+        win32gui.ReleaseDC(self.hwnd, wDC)
+        win32gui.DeleteObject(dataBitMap.GetHandle())
+        img = img[..., :3]
+        img = np.ascontiguousarray(img)
+        return img
+
 
 
 

@@ -168,7 +168,7 @@ class HealingTab(QWidget):
             thread.start()
 
     def startHealing(self) -> None:
-        maxHP = read_pointer(myStats, myHP_MAX_offset)
+        maxHP = read_pointer(myStatsPtr, myHPMAXOffset)
         maxHP = c.c_double.from_buffer(maxHP).value
         while self.startHealing_checkBox.checkState():
             for index in range(self.healing_listWidget.count()):
@@ -178,9 +178,9 @@ class HealingTab(QWidget):
                 hpHeal = hpHeal[3:]
                 hpHeal = float(hpHeal)
                 hotkey = item.split(':')[1]
-                myHp = read_pointer(myStats, myHP_offset)
+                myHp = read_pointer(myStatsPtr, myHPOffset)
                 myHp = c.c_double.from_buffer(myHp).value
-                myMana = read_pointer(myStats, myMP_offset)
+                myMana = read_pointer(myStatsPtr, myMPOffset)
                 myMana = c.c_double.from_buffer(myMana).value
                 if len(hotkey) <= 3:
                     hotkey = hotkey[1:]
