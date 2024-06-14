@@ -10,6 +10,12 @@ from Functions import *
 class TargetLootTab(QWidget):
     def __init__(self, parent=None):
         super(TargetLootTab, self).__init__(parent)
+        # Load Icon
+        self.setWindowIcon(QIcon('Icon.jpg'))
+
+        # Set Title and Size
+        self.setWindowTitle("Targeting")
+        self.setFixedSize(350, 400)
         # Variables
         # Check Boxes
         self.startLoot_checkBox = QCheckBox("Open Corpses", self)
@@ -70,7 +76,6 @@ class TargetLootTab(QWidget):
         # Add Layouts
         groupbox_layout.addWidget(self.targetList_listWidget)
         groupbox_layout.addLayout(layout1)
-        groupbox.setFixedSize(150, 250)
         self.layout.addWidget(groupbox, 0, 0, 2, 1)
 
     def saveLoadTargetLoot(self) -> None:
@@ -103,7 +108,6 @@ class TargetLootTab(QWidget):
         groupbox_layout.addWidget(self.targetLootProfile_listWidget)
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox.setFixedWidth(150)
         self.layout.addWidget(groupbox, 2, 0)
 
     def setTarget(self) -> None:

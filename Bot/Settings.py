@@ -5,18 +5,23 @@ import win32gui
 from Functions import *
 
 
-class LootTab(QWidget):
+class SettingsTab(QWidget):
     def __init__(self, parent=None):
-        super(LootTab, self).__init__(parent)
+        super(SettingsTab, self).__init__(parent)
+        # Load Icon
+        self.setWindowIcon(QIcon('Icon.jpg'))
+
+        # Set Title and Size
+        self.setWindowTitle("Settings")
+        self.setFixedSize(350, 300)
+
         # Variables
         # Labels
         self.bp_label = QLabel("Set", self)
         self.screen_label = QLabel("Set", self)
-        self.tools_label = QLabel("Set", self)
 
         self.bp_label.setFixedHeight(20)
         self.screen_label.setFixedHeight(20)
-        self.tools_label.setFixedHeight(20)
 
         # List Widgets
         self.settingsProfile_listWidget = QListWidget(self)
@@ -29,25 +34,28 @@ class LootTab(QWidget):
         self.setLayout(self.layout)
 
         # Init View
-        self.setBackpacks()
-        self.setEnvironment()
         self.setTools()
+        self.setEnvironment()
         self.saveLoadSettings()
 
-    def setBackpacks(self) -> None:
-        groupbox = QGroupBox("Backpacks&&Runes", self)
+    def setTools(self) -> None:
+        groupbox = QGroupBox("Tools", self)
         groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
-        goldBP_button = QPushButton("0 Backpack", self)
-        itemBP1_button = QPushButton("1 Backpack", self)
-        itemBP2_button = QPushButton("2 Backpack", self)
-        itemBP3_button = QPushButton("3 Backpack", self)
-        hmmBP_button = QPushButton("HMM Backpack", self)
-        uhBP_button = QPushButton("UH Backpack", self)
-        sdBP_button = QPushButton("SD Backpack", self)
-        gfbBP_button = QPushButton("GFB Backpack", self)
+        goldBP_button = QPushButton("1 Backpack", self)
+        itemBP1_button = QPushButton("2 Backpack", self)
+        itemBP2_button = QPushButton("3 Backpack", self)
+        itemBP3_button = QPushButton("4 Backpack", self)
+        hmmBP_button = QPushButton("HMM", self)
+        uhBP_button = QPushButton("UH", self)
+        sdBP_button = QPushButton("SD", self)
+        gfbBP_button = QPushButton("GFB", self)
+        rope_button = QPushButton("Rope", self)
+        shovel_button = QPushButton("Shovel", self)
+        pick_button = QPushButton("Pick", self)
+        skinKnife_button = QPushButton("Skin Knife", self)
 
         # Buttons Functions
         goldBP_button.clicked.connect(lambda: self.setBP(0))
@@ -58,6 +66,10 @@ class LootTab(QWidget):
         hmmBP_button.clicked.connect(lambda: self.setBP(5))
         sdBP_button.clicked.connect(lambda: self.setBP(6))
         gfbBP_button.clicked.connect(lambda: self.setBP(7))
+        shovel_button.clicked.connect(lambda: self.setBP(8))
+        rope_button.clicked.connect(lambda: self.setBP(9))
+        pick_button.clicked.connect(lambda: self.setBP(10))
+        skinKnife_button.clicked.connect(lambda: self.setBP(11))
 
         # QHBox
         layout = QHBoxLayout(self)
@@ -67,19 +79,21 @@ class LootTab(QWidget):
         layout4 = QHBoxLayout(self)
         layout5 = QHBoxLayout(self)
         layout6 = QHBoxLayout(self)
-        layout7 = QHBoxLayout(self)
-        layout8 = QHBoxLayout(self)
 
         # Add Widgets
         layout.addWidget(self.bp_label)
         layout1.addWidget(goldBP_button)
-        layout2.addWidget(itemBP1_button)
-        layout3.addWidget(itemBP2_button)
-        layout4.addWidget(itemBP3_button)
-        layout5.addWidget(uhBP_button)
-        layout6.addWidget(hmmBP_button)
-        layout7.addWidget(sdBP_button)
-        layout8.addWidget(gfbBP_button)
+        layout1.addWidget(itemBP1_button)
+        layout2.addWidget(itemBP2_button)
+        layout2.addWidget(itemBP3_button)
+        layout3.addWidget(uhBP_button)
+        layout3.addWidget(hmmBP_button)
+        layout4.addWidget(sdBP_button)
+        layout4.addWidget(gfbBP_button)
+        layout5.addWidget(rope_button)
+        layout5.addWidget(shovel_button)
+        layout6.addWidget(pick_button)
+        layout6.addWidget(skinKnife_button)
 
         # Add Layouts
         groupbox_layout.addLayout(layout)
@@ -89,46 +103,7 @@ class LootTab(QWidget):
         groupbox_layout.addLayout(layout4)
         groupbox_layout.addLayout(layout5)
         groupbox_layout.addLayout(layout6)
-        groupbox_layout.addLayout(layout7)
-        groupbox_layout.addLayout(layout8)
-        self.layout.addWidget(groupbox, 0, 1, 3, 1)
-
-    def setTools(self) -> None:
-        groupbox = QGroupBox("Tools", self)
-        groupbox_layout = QVBoxLayout(self)
-        groupbox.setLayout(groupbox_layout)
-
-        # Buttons
-        rope_button = QPushButton("Rope", self)
-        shovel_button = QPushButton("Shovel", self)
-        pick_button = QPushButton("Pick", self)
-
-        # Buttons Functions
-        shovel_button.clicked.connect(lambda: self.setBP(8))
-        rope_button.clicked.connect(lambda: self.setBP(9))
-        pick_button.clicked.connect(lambda: self.setBP(10))
-
-        # QHBox
-        layout = QHBoxLayout(self)
-        layout1 = QHBoxLayout(self)
-        layout2 = QHBoxLayout(self)
-        layout3 = QHBoxLayout(self)
-        layout4 = QHBoxLayout(self)
-
-        # Add Widgets
-        layout.addWidget(self.tools_label)
-        layout1.addWidget(shovel_button)
-        layout2.addWidget(rope_button)
-        layout3.addWidget(pick_button)
-
-        # Add Layouts
-        groupbox_layout.addLayout(layout)
-        groupbox_layout.addLayout(layout1)
-        groupbox_layout.addLayout(layout2)
-        groupbox_layout.addLayout(layout3)
-        groupbox_layout.addLayout(layout4)
-        groupbox.setFixedWidth(150)
-        self.layout.addWidget(groupbox, 0, 0)
+        self.layout.addWidget(groupbox, 0, 1, 2, 1)
 
     def saveLoadSettings(self) -> None:
         groupbox = QGroupBox("Save&&Load", self)
@@ -161,8 +136,7 @@ class LootTab(QWidget):
         groupbox_layout.addWidget(self.settingsProfile_listWidget)
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox.setFixedWidth(150)
-        self.layout.addWidget(groupbox, 2, 0)
+        self.layout.addWidget(groupbox, 1, 0)
 
     def setEnvironment(self) -> None:
         groupbox = QGroupBox("Environment", self)
@@ -191,62 +165,51 @@ class LootTab(QWidget):
         groupbox_layout.addLayout(layout)
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox.setFixedWidth(150)
-        self.layout.addWidget(groupbox, 1, 0)
+        self.layout.addWidget(groupbox, 0, 0)
 
     # Functions
-    def setScreen(self, id):
-        thread = Thread(target=self.setScreen_Thread, args=(id,))
+    def setScreen(self, index):
+        thread = Thread(target=self.setScreen_Thread, args=(index,))
         thread.daemon = True
         thread.start()
 
-    def setBP(self, id):
-        thread = Thread(target=self.setBP_Thread, args=(id,))
+    def setBP(self, index):
+        thread = Thread(target=self.setTools_Thread, args=(index,))
         thread.daemon = True
         thread.start()
 
     # Threads
-    def setScreen_Thread(self, id):
+    def setScreen_Thread(self, index):
         self.screen_label.setStyleSheet("color: red")
         while True:
-            screenX[id], screenY[id] = win32api.GetCursorPos()
-            self.screen_label.setText(f"X = {screenX[id]} | Y = {screenY[id]}")
+            screenX[index], screenY[index] = win32api.GetCursorPos()
+            self.screen_label.setText(f"X = {screenX[index]} | Y = {screenY[index]}")
             time.sleep(0.05)
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
                 self.screen_label.setStyleSheet("color: blue")
                 break
         time.sleep(0.1)
         while True:
-            screenWidth[id], screenHeight[id] = win32api.GetCursorPos()
-            self.screen_label.setText(f"X = {screenWidth[id]} | Y = {screenHeight[id]}")
+            screenWidth[index], screenHeight[index] = win32api.GetCursorPos()
+            self.screen_label.setText(f"X = {screenWidth[index]} | Y = {screenHeight[index]}")
             time.sleep(0.05)
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
                 self.screen_label.setStyleSheet("color: black")
                 self.screen_label.setText("Set")
-                screenX[id], screenY[id] = win32gui.ScreenToClient(game, (screenX[id], screenY[id]))
-                screenWidth[id], screenHeight[id] = win32gui.ScreenToClient(game, (screenWidth[id], screenHeight[id]))
+                screenX[index], screenY[index] = win32gui.ScreenToClient(game, (screenX[index], screenY[index]))
+                screenWidth[index], screenHeight[index] = win32gui.ScreenToClient(game, (screenWidth[index], screenHeight[index]))
                 return
 
-    def setBP_Thread(self, id):
-        if id < 8:
-            self.bp_label.setStyleSheet("color: red")
-        else:
-            self.tools_label.setStyleSheet("color: red")
+    def setTools_Thread(self, index):
+        self.bp_label.setStyleSheet("color: red")
         while True:
-            bpX[id], bpY[id] = win32api.GetCursorPos()
-            if id < 8:
-                self.bp_label.setText(f"X = {bpX[id]} | Y = {bpY[id]}")
-            else:
-                self.tools_label.setText(f"X = {bpX[id]} | Y = {bpY[id]}")
+            bpX[index], bpY[index] = win32api.GetCursorPos()
+            self.bp_label.setText(f"X = {bpX[index]} | Y = {bpY[index]}")
             time.sleep(0.05)
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
-                bpX[id], bpY[id] = win32gui.ScreenToClient(game, (bpX[id], bpY[id]))
-                if id < 8:
-                    self.bp_label.setText("Set")
-                    self.bp_label.setStyleSheet("color: black")
-                else:
-                    self.tools_label.setText("Set")
-                    self.tools_label.setStyleSheet("color: black")
+                bpX[index], bpY[index] = win32gui.ScreenToClient(game, (bpX[index], bpY[index]))
+                self.bp_label.setText("Set")
+                self.bp_label.setStyleSheet("color: black")
                 return
 
     def saveSettings(self) -> None:
@@ -288,8 +251,6 @@ class LootTab(QWidget):
                 bpY[i] = bpDataY[i]
         self.bp_label.setStyleSheet("color: green")
         self.screen_label.setStyleSheet("color: green")
-        self.tools_label.setStyleSheet("color: green")
         self.screen_label.setText("Loaded")
         self.bp_label.setText("Loaded")
-        self.tools_label.setText("Loaded")
 

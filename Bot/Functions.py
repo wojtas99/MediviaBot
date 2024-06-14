@@ -78,7 +78,7 @@ def readPointer(address, extra_offset):
 nickname = readMemory(myName, 0)
 nickname = nickname.value
 nickname = nickname.decode('utf-8')
-win32gui.SetWindowText(game, "Medivia - " + nickname)
+#win32gui.SetWindowText(game, "Medivia - " + nickname)
 
 
 def sortMonstersByDist(point, characterX, characterY):

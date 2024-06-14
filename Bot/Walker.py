@@ -1,10 +1,15 @@
 from Functions import *
 
 
-class CaveTab(QWidget):
+class WalkerTab(QWidget):
     def __init__(self):
         super().__init__()
+        # Load Icon
+        self.setWindowIcon(QIcon('Icon.jpg'))
 
+        # Set Title and Size
+        self.setWindowTitle("Walker")
+        self.setFixedSize(350, 350)
         # Variables
         self.waypoint_listWidget = QListWidget(self)
         self.waypointProfile_listWidget = QListWidget(self)
@@ -52,7 +57,6 @@ class CaveTab(QWidget):
         groupbox_layout.addWidget(self.waypointProfile_listWidget)
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox.setFixedWidth(150)
         self.layout.addWidget(groupbox, 2, 0)
 
     def waypointList(self) -> None:
@@ -75,8 +79,7 @@ class CaveTab(QWidget):
         # Add Layouts
         groupbox_layout.addWidget(self.waypoint_listWidget)
         groupbox_layout.addLayout(layout1)
-        groupbox.setFixedSize(150, 250)
-        self.layout.addWidget(groupbox, 0, 0, 2, 1)
+        self.layout.addWidget(groupbox, 0, 0, 1, 1)
 
     def addWaypoins(self) -> None:
         groupbox = QGroupBox("Add Waypoints")
@@ -100,7 +103,7 @@ class CaveTab(QWidget):
         shovelWaypoint_button = QPushButton("Shovel", self)
         pickWaypoint_button = QPushButton("Pick", self)
         actionWaypoint_button = QPushButton("Action", self)
-        lureWaypoint_button = QPushButton("Lure", self)
+        labelWaypoint_button = QPushButton("Label", self)
 
         # Line Edits
         self.actionWaypoint_textEdit.setFixedHeight(100)
@@ -114,11 +117,11 @@ class CaveTab(QWidget):
         # Add Widgets
         layout1.addWidget(self.waypointOption_comboBox)
         layout2.addWidget(standWaypoint_button)
-        layout2.addWidget(ropeWaypoint_button)
-        layout2.addWidget(shovelWaypoint_button)
+        layout2.addWidget(actionWaypoint_button)
+        layout2.addWidget(labelWaypoint_button)
+        layout3.addWidget(ropeWaypoint_button)
+        layout3.addWidget(shovelWaypoint_button)
         layout3.addWidget(pickWaypoint_button)
-        layout3.addWidget(actionWaypoint_button)
-        layout3.addWidget(lureWaypoint_button)
         layout4.addWidget(self.actionWaypoint_textEdit)
 
 

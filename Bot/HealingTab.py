@@ -6,6 +6,12 @@ from Functions import *
 class HealingTab(QWidget):
     def __init__(self):
         super().__init__()
+        # Load Icon
+        self.setWindowIcon(QIcon('Icon.jpg'))
+
+        # Set Title and Size
+        self.setWindowTitle("Healing")
+        self.setFixedSize(300, 180)
         # Variables
         # Check Boxes
         self.startHealing_checkBox = QCheckBox("Start Healing", self)
@@ -42,7 +48,6 @@ class HealingTab(QWidget):
 
         # Add Layouts
         groupbox_layout.addWidget(self.healList_listWidget)
-        groupbox.setFixedSize(150, 250)
         self.layout.addWidget(groupbox, 0, 0, 2, 1, alignment=Qt.AlignTop)
 
     def healHotkeyRune(self) -> None:
@@ -74,7 +79,6 @@ class HealingTab(QWidget):
         layout1 = QHBoxLayout(self)
         layout2 = QHBoxLayout(self)
         layout3 = QHBoxLayout(self)
-        layout4 = QHBoxLayout(self)
 
         # Add Widgets
         layout1.addWidget(self.hpMana_comboBox)
@@ -85,13 +89,12 @@ class HealingTab(QWidget):
         layout2.addWidget(self.hpAbove_line)
         layout3.addWidget(self.mp_label)
         layout3.addWidget(self.minMp_line)
-        layout4.addWidget(addHotkey_button)
+        layout3.addWidget(addHotkey_button)
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
         groupbox_layout.addLayout(layout3)
-        groupbox_layout.addLayout(layout4)
         self.layout.addWidget(groupbox, 0, 1)
 
     def startHealing(self):
@@ -143,6 +146,7 @@ class HealingTab(QWidget):
     def checkStartState(self) -> None:
         thread = Thread(target=self.startHealing_Thread)
         thread.daemon = True
+        thread.start()
         if self.startHealing_checkBox.checkState() == 2:
             thread.start()
 
