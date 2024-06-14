@@ -1,6 +1,0 @@
-Halberd | c
-Dark_Helmet | c
-Melee_Ring | c
-meat | u
-Bag | u
-GoldCoin | c

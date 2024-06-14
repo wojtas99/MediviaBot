@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Gold Coin",
+        "data": {
+            "Loot": 0
+        }
+    },
+    {
+        "name": "Minotaur Hoof",
+        "data": {
+            "Loot": 1
+        }
+    },
+    {
+        "name": "meat",
+        "data": {
+            "Loot": -1
+        }
+    }
+]

@@ -47,49 +47,45 @@ game = win32gui.FindWindow(None, 'Medivia')
 lock = threading.Lock()
 procID = win32process.GetWindowThreadProcessId(game)
 procID = procID[1]
-process_handle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-modules = win32process.EnumProcessModules(process_handle)
-base_adr = modules[0]
+processHandle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
+modules = win32process.EnumProcessModules(processHandle)
+baseAddress = modules[0]
 
 
-def read_memory(address_read, offset):
-    process_handler = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-    target_adr = address_read + base_adr + offset
+def readMemory(address_read, offset):
+    target_adr = address_read + baseAddress + offset
     address = c.c_void_p(target_adr)
     buffer = c.create_string_buffer(256)
     bytes_read = c.c_size_t()
-    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, 256, c.byref(bytes_read))
-    c.windll.kernel32.CloseHandle(process_handler)
+    c.windll.kernel32.ReadProcessMemory(processHandle, address, buffer, 256, c.byref(bytes_read))
     return buffer
 
 
-def read_pointer(address, extra_offset):
-    process_handler = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
-    target_adr = base_adr + address
+def readPointer(address, extra_offset):
+    target_adr = baseAddress + address
     address = c.c_void_p(target_adr)
     buffer = c.create_string_buffer(256)
     bytes_read = c.c_size_t()
-    c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, 256, c.byref(bytes_read))
+    c.windll.kernel32.ReadProcessMemory(processHandle, address, buffer, 256, c.byref(bytes_read))
     for offset in extra_offset:
         address = c.c_ulonglong.from_buffer(buffer).value
         address += offset
         address = c.c_void_p(address)
-        c.windll.kernel32.ReadProcessMemory(process_handler, address, buffer, 256, c.byref(bytes_read))
-    c.windll.kernel32.CloseHandle(process_handler)
+        c.windll.kernel32.ReadProcessMemory(processHandle, address, buffer, 256, c.byref(bytes_read))
     return buffer
 
 
-nickname = read_memory(myName, 0)
+nickname = readMemory(myName, 0)
 nickname = nickname.value
 nickname = nickname.decode('utf-8')
 win32gui.SetWindowText(game, "Medivia - " + nickname)
 
 
-def sort_monsters_by_distance(points):
-    return math.sqrt((int(points[0])-300)**2 + (int(points[1]) - 252)**2)
+def sortMonstersByDist(point, characterX, characterY):
+    return math.sqrt((point[0] - characterX) ** 2 + (point[1] - characterY) ** 2)
 
 
-def merge_close_points(points, distance_threshold):
+def mergeClosePoints(points, distance_threshold):
     merged_points = []
     merged_indices = set()
 
@@ -107,7 +103,7 @@ def merge_close_points(points, distance_threshold):
     return merged_points
 
 
-def go_stand(monster_x, monster_y, monster_z, x, y, z):
+def stand(monster_x, monster_y, monster_z, x, y, z):
     myx = int(monster_x) - x
     myy = int(monster_y) - y
     myz = int(monster_z) - z
@@ -129,7 +125,7 @@ def go_stand(monster_x, monster_y, monster_z, x, y, z):
         return
 
 
-def go_north(monster_x, monster_y, monster_z, x, y, z):
+def walkNorth(monster_x, monster_y, monster_z, x, y, z):
     myx = int(monster_x) - x
     myy = int(monster_y) - y
     myz = int(monster_z) - z
@@ -139,7 +135,7 @@ def go_north(monster_x, monster_y, monster_z, x, y, z):
         return
 
 
-def go_south(monster_x, monster_y, monster_z, x, y, z):
+def walkSouth(monster_x, monster_y, monster_z, x, y, z):
     myx = int(monster_x) - x
     myy = int(monster_y) - y
     myz = int(monster_z) - z
@@ -149,7 +145,7 @@ def go_south(monster_x, monster_y, monster_z, x, y, z):
         return
 
 
-def go_west(monster_x, monster_y, monster_z, x, y, z):
+def walkWest(monster_x, monster_y, monster_z, x, y, z):
     myx = int(monster_x) - x
     myy = int(monster_y) - y
     myz = int(monster_z) - z
@@ -159,7 +155,7 @@ def go_west(monster_x, monster_y, monster_z, x, y, z):
         return
 
 
-def go_east(monster_x, monster_y, monster_z, x, y, z):
+def walkEast(monster_x, monster_y, monster_z, x, y, z):
     myx = int(monster_x) - x
     myy = int(monster_y) - y
     myz = int(monster_z) - z
@@ -169,7 +165,7 @@ def go_east(monster_x, monster_y, monster_z, x, y, z):
         return
 
 
-def collect_items(loot_x, loot_y, bp_x, bp_y):
+def collectItem(loot_x, loot_y, bp_x, bp_y):
     win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(loot_x, loot_y))
     win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(loot_x, loot_y))
     win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 1, win32api.MAKELONG(bp_x, bp_y))
@@ -180,21 +176,29 @@ def collect_items(loot_x, loot_y, bp_x, bp_y):
     return
 
 
-def click_right(x, y):
+def rightClick(x, y):
     win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(x, y))
     return
 
 
-def click_left(x, y):
+def leftClick(x, y):
     win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(x, y))
     return
 
 
-def use_on_myself(x, y):
+def dragDrop(x, y, characterX, characterY):
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(x, y))
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(characterX, characterY))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(characterX, characterY))
+    return
+
+
+def useOnMe(x, y):
     win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(x, y))
@@ -204,7 +208,7 @@ def use_on_myself(x, y):
     return
 
 
-def press_hotkey(hotkey):
+def pressHotkey(hotkey):
     win32gui.PostMessage(game, win32con.WM_KEYDOWN, 111+hotkey, 0x003B0001)
     win32gui.PostMessage(game, win32con.WM_KEYUP, 111+hotkey, 0x003B0001)
     return
@@ -224,9 +228,6 @@ def antyIdle():
     win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
     win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
     win32gui.PostMessage(game, win32con.WM_KEYUP, win32con.VK_CONTROL, 0xC11D0001)
-
-
-
 
 
 class WindowCapture:

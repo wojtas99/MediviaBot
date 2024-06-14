@@ -1,3 +1,5 @@
+import json
+
 import win32gui
 
 from Functions import *
@@ -17,45 +19,45 @@ class LootTab(QWidget):
         self.tools_label.setFixedHeight(20)
 
         # List Widgets
-        self.generalProfile_listWidget = QListWidget(self)
+        self.settingsProfile_listWidget = QListWidget(self)
 
         # Line Edits
-        self.generalProfile_line = QLineEdit(self)
+        self.settings_lineEdit = QLineEdit(self)
 
         # Layout
         self.layout = QGridLayout(self)
         self.setLayout(self.layout)
 
         # Init View
-        self.setBP()
+        self.setBackpacks()
         self.setEnvironment()
         self.setTools()
-        self.saveSettings()
+        self.saveLoadSettings()
 
-    def setBP(self) -> None:
+    def setBackpacks(self) -> None:
         groupbox = QGroupBox("Backpacks&&Runes", self)
         groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
-        goldBP_button = QPushButton("Gold Backpack", self)
-        itemBP1_button = QPushButton("1 Item Backpack", self)
-        itemBP2_button = QPushButton("2 Item Backpack", self)
-        itemBP3_button = QPushButton("3 Item Backpack", self)
+        goldBP_button = QPushButton("0 Backpack", self)
+        itemBP1_button = QPushButton("1 Backpack", self)
+        itemBP2_button = QPushButton("2 Backpack", self)
+        itemBP3_button = QPushButton("3 Backpack", self)
         hmmBP_button = QPushButton("HMM Backpack", self)
         uhBP_button = QPushButton("UH Backpack", self)
         sdBP_button = QPushButton("SD Backpack", self)
         gfbBP_button = QPushButton("GFB Backpack", self)
 
         # Buttons Functions
-        goldBP_button.clicked.connect(lambda: self.chooseItem(0))
-        itemBP1_button.clicked.connect(lambda: self.chooseItem(1))
-        itemBP2_button.clicked.connect(lambda: self.chooseItem(2))
-        itemBP3_button.clicked.connect(lambda: self.chooseItem(3))
-        uhBP_button.clicked.connect(lambda: self.chooseItem(4))
-        hmmBP_button.clicked.connect(lambda: self.chooseItem(5))
-        sdBP_button.clicked.connect(lambda: self.chooseItem(6))
-        gfbBP_button.clicked.connect(lambda: self.chooseItem(7))
+        goldBP_button.clicked.connect(lambda: self.setBP(0))
+        itemBP1_button.clicked.connect(lambda: self.setBP(1))
+        itemBP2_button.clicked.connect(lambda: self.setBP(2))
+        itemBP3_button.clicked.connect(lambda: self.setBP(3))
+        uhBP_button.clicked.connect(lambda: self.setBP(4))
+        hmmBP_button.clicked.connect(lambda: self.setBP(5))
+        sdBP_button.clicked.connect(lambda: self.setBP(6))
+        gfbBP_button.clicked.connect(lambda: self.setBP(7))
 
         # QHBox
         layout = QHBoxLayout(self)
@@ -103,10 +105,10 @@ class LootTab(QWidget):
         knife_button = QPushButton("Skin Knife", self)
 
         # Buttons Functions
-        shovel_button.clicked.connect(lambda: self.chooseItem(8))
-        rope_button.clicked.connect(lambda: self.chooseItem(9))
-        pick_button.clicked.connect(lambda: self.chooseItem(10))
-        knife_button.clicked.connect(lambda: self.chooseItem(11))
+        shovel_button.clicked.connect(lambda: self.setBP(8))
+        rope_button.clicked.connect(lambda: self.setBP(9))
+        pick_button.clicked.connect(lambda: self.setBP(10))
+        knife_button.clicked.connect(lambda: self.setBP(11))
 
         # QHBox
         layout = QHBoxLayout(self)
@@ -131,18 +133,22 @@ class LootTab(QWidget):
         groupbox.setFixedWidth(150)
         self.layout.addWidget(groupbox, 0, 0)
 
-    def saveSettings(self) -> None:
-        groupbox = QGroupBox("Save&&Load Settings", self)
+    def saveLoadSettings(self) -> None:
+        groupbox = QGroupBox("Save&&Load", self)
         groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
-        saveProfile_button = QPushButton("Save", self)
-        loadProfile_button = QPushButton("Load", self)
+        saveSettings_button = QPushButton("Save", self)
+        loadSettings_button = QPushButton("Load", self)
+
+        # Buttons Functions
+        saveSettings_button.clicked.connect(self.saveSettings)
+        loadSettings_button.clicked.connect(self.loadSettings)
 
         # List Widgets
         for file in os.listdir("Settings"):
-            self.generalProfile_listWidget.addItem(f"{file.split('.')[0]}")
+            self.settingsProfile_listWidget.addItem(f"{file.split('.')[0]}")
 
         # QHBox
         layout1 = QHBoxLayout(self)
@@ -150,12 +156,12 @@ class LootTab(QWidget):
 
         # Add Widgets
         layout1.addWidget(QLabel("Name:", self))
-        layout1.addWidget(self.generalProfile_line)
-        layout2.addWidget(saveProfile_button)
-        layout2.addWidget(loadProfile_button)
+        layout1.addWidget(self.settings_lineEdit)
+        layout2.addWidget(saveSettings_button)
+        layout2.addWidget(loadSettings_button)
 
         # Add Layouts
-        groupbox_layout.addWidget(self.generalProfile_listWidget)
+        groupbox_layout.addWidget(self.settingsProfile_listWidget)
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
         groupbox.setFixedWidth(150)
@@ -167,12 +173,12 @@ class LootTab(QWidget):
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
-        setScreen_button = QPushButton("Set Screen", self)
-        setLoot_button = QPushButton("Set Loot", self)
+        setMainScreen_button = QPushButton("Set Screen", self)
+        setLootScreen_button = QPushButton("Set Loot", self)
 
         # Buttons Functions
-        setScreen_button.clicked.connect(lambda: self.setScreen(0))
-        setLoot_button.clicked.connect(lambda: self.setScreen(1))
+        setMainScreen_button.clicked.connect(lambda: self.setScreen(0))
+        setLootScreen_button.clicked.connect(lambda: self.setScreen(1))
 
         # QHBox
         layout = QHBoxLayout(self)
@@ -181,8 +187,8 @@ class LootTab(QWidget):
 
         # Add Widgets
         layout.addWidget(self.screen_label)
-        layout1.addWidget(setScreen_button)
-        layout2.addWidget(setLoot_button)
+        layout1.addWidget(setMainScreen_button)
+        layout2.addWidget(setLootScreen_button)
 
         # Add Layouts
         groupbox_layout.addLayout(layout)
@@ -193,17 +199,17 @@ class LootTab(QWidget):
 
     # Functions
     def setScreen(self, id):
-        thread = Thread(target=self.setScreen_thread, args=(id,))
+        thread = Thread(target=self.setScreen_Thread, args=(id,))
         thread.daemon = True
         thread.start()
 
-    def chooseItem(self, id):
-        thread = Thread(target=self.chooseBP_Thread, args=(id,))
+    def setBP(self, id):
+        thread = Thread(target=self.setBP_Thread, args=(id,))
         thread.daemon = True
         thread.start()
 
     # Threads
-    def setScreen_thread(self, id):
+    def setScreen_Thread(self, id):
         self.screen_label.setStyleSheet("color: red")
         while True:
             screenX[id], screenY[id] = win32api.GetCursorPos()
@@ -224,7 +230,7 @@ class LootTab(QWidget):
                 screenWidth[id], screenHeight[id] = win32gui.ScreenToClient(game, (screenWidth[id], screenHeight[id]))
                 return
 
-    def chooseBP_Thread(self, id):
+    def setBP_Thread(self, id):
         if id < 8:
             self.bp_label.setStyleSheet("color: red")
         else:
@@ -245,3 +251,48 @@ class LootTab(QWidget):
                     self.tools_label.setText("Set")
                     self.tools_label.setStyleSheet("color: black")
                 return
+
+    def saveSettings(self) -> None:
+        settingsName = self.settings_lineEdit.text()
+        for index in range(self.settingsProfile_listWidget.count()):
+            if settingsName.upper() == self.settingsProfile_listWidget.item(index).text().upper():
+                return
+        if settingsName:
+            screen_data = {
+                "screenX": screenX,
+                "screenY": screenY,
+                "screenWidth": screenWidth,
+                "screenHeight": screenHeight,
+                "bpX": bpX,
+                "bpY": bpY
+            }
+            settingsData = {
+                "screen_data": screen_data
+            }
+            with open(f"Settings/{settingsName}.json", "w") as f:
+                json.dump(settingsData, f, indent=4)
+            self.settingsProfile_listWidget.addItem(settingsName)
+            self.settings_lineEdit.clear()
+
+    def loadSettings(self) -> None:
+        settingsName = self.settingsProfile_listWidget.currentItem().text()
+        if settingsName:
+            with open(f"Settings/{settingsName}.json", "r") as f:
+                settingsList = json.load(f)
+            settingsData = settingsList.get("screen_data", {})
+            screenX[0], screenX[1] = settingsData.get("screenX", [0] * 2)
+            screenY[0], screenY[1] = settingsData.get("screenY", [0] * 2)
+            screenWidth[0], screenWidth[1] = settingsData.get("screenWidth", [0] * 2)
+            screenHeight[0], screenHeight[1] = settingsData.get("screenHeight", [0] * 2)
+            bpDataX = settingsData.get("bpX", [0] * 12)
+            bpDataY = settingsData.get("bpY", [0] * 12)
+            for i in range(len(bpX)):
+                bpX[i] = bpDataX[i]
+                bpY[i] = bpDataY[i]
+        self.bp_label.setStyleSheet("color: green")
+        self.screen_label.setStyleSheet("color: green")
+        self.tools_label.setStyleSheet("color: green")
+        self.screen_label.setText("Loaded")
+        self.bp_label.setText("Loaded")
+        self.tools_label.setText("Loaded")
+

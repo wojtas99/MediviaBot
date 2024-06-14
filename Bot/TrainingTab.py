@@ -174,11 +174,11 @@ class SkillTab(QWidget):
         timer = 0
         while self.startFishing_checkBox.checkState() == 2 and self.startSkill_checkBox.checkState() == 0 and self.waterX != 0 and self.fishingRodX != 0 and self.baitX != 0:
             if self.bait == 0:
-                click_right(self.baitX, self.baitY)
-                click_left(self.waterX, self.waterY)
+                rightClick(self.baitX, self.baitY)
+                leftClick(self.waterX, self.waterY)
                 time.sleep(random.uniform(1.0, 1.1))
-            click_right(self.fishingRodX, self.fishingRodY)
-            click_left(self.waterX, self.waterY)
+            rightClick(self.fishingRodX, self.fishingRodY)
+            leftClick(self.waterX, self.waterY)
             self.bait += 1
             time.sleep(random.uniform(1.0, 1.1))
             if self.bait >= 1010:
@@ -191,13 +191,13 @@ class SkillTab(QWidget):
                 mana = mana[5:]
                 mana = float(mana)
                 hotkey = item.split(':')[1]
-                myMana = read_pointer(myStatsPtr, myMPOffset)
+                myMana = readPointer(myStatsPtr, myMPOffset)
                 myMana = c.c_double.from_buffer(myMana).value
                 if len(hotkey) <= 3:
                     hotkey = hotkey[1:]
                     hotkey = int(hotkey)
                     if myMana >= mana:
-                        press_hotkey(hotkey)
+                        pressHotkey(hotkey)
                         time.sleep(0.3)
                 time.sleep(0.5)
                 timer += 0.5
@@ -205,7 +205,7 @@ class SkillTab(QWidget):
                     timer = 0
                     if self.foodX != 0:
                         for _ in range(5):
-                            click_right(self.foodX, self.foodY)
+                            rightClick(self.foodX, self.foodY)
                             time.sleep(0.1)
                     if self.antyIdle_checkBox.checkState() == 2:
                         antyIdle()

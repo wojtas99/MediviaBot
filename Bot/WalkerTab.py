@@ -186,9 +186,9 @@ class CaveTab(QWidget):
 
     # Thread that record our waypoints
     def recordWaypoints(self) -> None:
-        x = read_memory(myX, 0)
-        y = read_memory(myY, 0)
-        z = read_memory(myZ, 0)
+        x = readMemory(myX, 0)
+        y = readMemory(myY, 0)
+        z = readMemory(myZ, 0)
         x = c.c_int.from_buffer(x).value
         y = c.c_int.from_buffer(y).value
         z = c.c_int.from_buffer(z).value
@@ -197,9 +197,9 @@ class CaveTab(QWidget):
         new_y = y
         new_z = z
         while self.recordCaveBot_checkBox.checkState():
-            x = read_memory(myX, 0)
-            y = read_memory(myY, 0)
-            z = read_memory(myZ, 0)
+            x = readMemory(myX, 0)
+            y = readMemory(myY, 0)
+            z = readMemory(myZ, 0)
             x = c.c_int.from_buffer(x).value
             y = c.c_int.from_buffer(y).value
             z = c.c_int.from_buffer(z).value
@@ -234,15 +234,15 @@ class CaveTab(QWidget):
             numbers = re.sub(r'\D', ' ', self.waypoint_listWidget.item(i).text())
             wpt = [num for num in numbers.split(' ') if num]
             self.waypoint_listWidget.setCurrentRow(i)
-            targetID = read_memory(attack, 0)
+            targetID = readMemory(attack, 0)
             targetID = c.c_ulonglong.from_buffer(targetID).value
             while targetID != 0:
-                targetID = read_memory(attack, 0)
+                targetID = readMemory(attack, 0)
                 targetID = c.c_ulonglong.from_buffer(targetID).value
                 time.sleep(2)
-            x = read_memory(myX, 0)
-            y = read_memory(myY, 0)
-            z = read_memory(myZ, 0)
+            x = readMemory(myX, 0)
+            y = readMemory(myY, 0)
+            z = readMemory(myZ, 0)
             x = c.c_int.from_buffer(x).value
             y = c.c_int.from_buffer(y).value
             z = c.c_short.from_buffer(z).value
@@ -253,7 +253,7 @@ class CaveTab(QWidget):
                     i = 0
                 continue
             if 5 <= timer <= 10:
-                click_left(875 + (int(wpt[0]) - x)*70, 475 + (int(wpt[1]) - y)*70)
+                leftClick(875 + (int(wpt[0]) - x) * 70, 475 + (int(wpt[1]) - y) * 70)
                 timer += 2
                 time.sleep(2)
                 continue
@@ -263,14 +263,14 @@ class CaveTab(QWidget):
                     i = 0
                 continue
             if status == 'I':
-                go_stand(wpt[0], wpt[1], wpt[2], x, y, z)
+                stand(wpt[0], wpt[1], wpt[2], x, y, z)
             if status == 'N':
-                go_north(wpt[0], wpt[1], wpt[2], x, y, z)
+                walkNorth(wpt[0], wpt[1], wpt[2], x, y, z)
             if status == 'S':
-                go_south(wpt[0], wpt[1], wpt[2], x, y, z)
+                walkSouth(wpt[0], wpt[1], wpt[2], x, y, z)
             if status == 'E':
-                go_east(wpt[0], wpt[1], wpt[2], x, y, z)
+                walkEast(wpt[0], wpt[1], wpt[2], x, y, z)
             if status == 'W':
-                go_west(wpt[0], wpt[1], wpt[2], x, y, z)
+                walkWest(wpt[0], wpt[1], wpt[2], x, y, z)
             time.sleep(0.1)
             timer += 0.1

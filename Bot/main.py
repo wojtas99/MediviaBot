@@ -1,35 +1,42 @@
+import time
+
 from Functions import *
 from HealingTab import HealingTab
 from TrainingTab import SkillTab
 from WalkerTab import CaveTab
-from GeneralTab import GeneralTab
-from SettingsTab import LootTab
+from TargetLoot import TargetLootTab
+from Settings import LootTab
 import urllib
 from urllib import request
+from PIL import ImageSequence
 
 
 def add_Items_from_URL() -> None:
     tmp = 0
-    f = open('Loot.txt', 'r')
-    for item in f:
-        name = item.split('/')[-1]
-        name = name.strip('\n')
-        for files in os.listdir('Loot/'):
-            tmp = 0
-            if files == name:
-                tmp = 1
-                break
-        if tmp:
-            continue
-        urllib.request.urlretrieve(item, 'Loot/'+name)
-        image1 = Image.open('Loot/'+name)
-        image1.save('Loot/'+name)
-        image1 = Image.open('Loot/'+name)
-        image2 = Image.open('background.png')
-        image1 = image1.convert('RGBA')
-        image2 = image2.convert('RGBA')
-        image2.paste(image1, (0, 0), image1)
-        image2.save('Loot/'+name)
+    with open('Loot.txt', 'r') as f:
+        for item in f:
+            item = item.strip()
+            name = item.split('/')[-1]
+            name = name.replace("_", " ")
+            if name in os.listdir('ItemImages/'):
+                continue
+            urllib.request.urlretrieve(item, f'ItemImages/{name}')
+            gif = Image.open(f'ItemImages/{name}')
+            if gif.format == 'GIF':
+                frames_dir = f'ItemImages/{name.split(".gif")[0]}'
+                os.makedirs(frames_dir, exist_ok=True)
+                for i, frame in enumerate(ImageSequence.Iterator(gif)):
+                    frame = frame.convert('RGBA')
+                    background = Image.open('background.png').convert('RGBA')
+                    background.paste(frame, (0, 0), frame)
+                    background.save(f'{frames_dir}/{name.split(".gif")[0]}{i}.png')
+                gif.close()
+                os.remove(f'ItemImages/{name}')
+            else:
+                image1 = Image.open(f'ItemImages/{name}').convert('RGBA')
+                image2 = Image.open('background.png').convert('RGBA')
+                image2.paste(image1, (0, 0), image1)
+                image2.save(f'ItemImages/{name}')
 
 
 class MainWindow(QWidget):
@@ -40,9 +47,9 @@ class MainWindow(QWidget):
         #  Title and Size
         self.setWindowTitle("EasyBot - " + nickname)
         tab = QTabWidget(self)
-        tab.addTab(GeneralTab(), "Target&&Loot")
+        tab.addTab(TargetLootTab(), "Target&&Loot")
         tab.addTab(CaveTab(), "Walker")
-        tab.addTab(HealingTab(), "Healing&&Attack")
+        tab.addTab(HealingTab(), "Healing")
         #tab.addTab(SkillTab(), "Training")
         tab.addTab(LootTab(), "Settings")
         vbox = QVBoxLayout(self)
@@ -51,6 +58,12 @@ class MainWindow(QWidget):
 
 
 def main():
+    os.makedirs("Targeting", exist_ok=True)
+    os.makedirs("Looting", exist_ok=True)
+    os.makedirs("TargetImages", exist_ok=True)
+    os.makedirs("Settings", exist_ok=True)
+    os.makedirs("Waypoints", exist_ok=True)
+    os.makedirs("ItemImages", exist_ok=True)
     add_Items_from_URL()
     app = QApplication([])
     main_window = MainWindow()

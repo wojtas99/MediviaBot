@@ -1,4 +1,0 @@
-Minotaur_Hoof | c
-meat | c1
-Bag | c1
-GoldCoin | c

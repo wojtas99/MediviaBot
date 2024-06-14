@@ -1,3 +1,5 @@
+import time
+
 from Functions import *
 
 
@@ -5,200 +7,229 @@ class HealingTab(QWidget):
     def __init__(self):
         super().__init__()
         # Variables
-        self.healthPointsRune_line = None
-        self.setRune_button = None
-        self.healthPointsHotkey_line = None
-        self.manaPoints_line = None
-        self.hotkeyList_comboBox = None
-        self.healing_listWidget = None
-        self.startHealing_checkBox = None
-        self.runeX = 0
-        self.runeY = 0
+        # Check Boxes
+        self.startHealing_checkBox = QCheckBox("Start Healing", self)
 
-        self.layout = QGridLayout()
-        self.setLayout(self.layout)
-        # Functions
-        self.groupbox1()
-        self.groupbox2()
-        self.groupbox3()
-        self.groupbox4()
+        # Combo Boxes
+        self.hpMana_comboBox = QComboBox(self)
+        self.hotkeyRuneList_comboBox = QComboBox(self)
 
-    def groupbox1(self) -> None:
-        groupbox = QGroupBox("Healing List")
-        groupbox_layout = QVBoxLayout()
-        groupbox.setLayout(groupbox_layout)
+        # Line Edits
+        self.hpBelow_line = QLineEdit(self)
+        self.hpAbove_line = QLineEdit(self)
+        self.minMp_line = QLineEdit(self)
+        self.minMp_line.hide()
+
+        # Labels
+        self.mp_label = QLabel("Min MP:", self)
+        self.mp_label.hide()
 
         # List Widgets
-        self.healing_listWidget = QListWidget(self)
+        self.healList_listWidget = QListWidget(self)
+
+        self.layout = QGridLayout(self)
+        self.setLayout(self.layout)
+
+        # Functions
+        self.healList()
+        self.healHotkeyRune()
+        self.startHealing()
+
+    def healList(self) -> None:
+        groupbox = QGroupBox("Heal List")
+        groupbox_layout = QVBoxLayout(self)
+        groupbox.setLayout(groupbox_layout)
 
         # Add Layouts
-        groupbox_layout.addWidget(self.healing_listWidget)
-        self.layout.addWidget(groupbox, 0, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
-        groupbox.setFixedSize(150, 150)
+        groupbox_layout.addWidget(self.healList_listWidget)
+        groupbox.setFixedSize(150, 250)
+        self.layout.addWidget(groupbox, 0, 0, 2, 1, alignment=Qt.AlignTop)
 
-    def groupbox2(self) -> None:
-        groupbox = QGroupBox("Set Heal Hotkey")
-        groupbox_layout = QVBoxLayout()
+    def healHotkeyRune(self) -> None:
+        groupbox = QGroupBox("Hotkeys&&Runes")
+        groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
         addHotkey_button = QPushButton("Add", self)
-        addHotkey_button.clicked.connect(self.addHotkey)
+
+        # Buttons Functions
+        addHotkey_button.clicked.connect(self.addHealing)
 
         # Combo Boxes
-        self.hotkeyList_comboBox = QComboBox(self)
+        self.hpMana_comboBox.addItem("HP%")
+        self.hpMana_comboBox.addItem("HP")
+        self.hpMana_comboBox.addItem("MP%")
+        self.hpMana_comboBox.addItem("MP")
+        self.hotkeyRuneList_comboBox.addItem("UH")
+        self.hotkeyRuneList_comboBox.addItem("Potion")
         for i in range(1, 13):
-            self.hotkeyList_comboBox.addItem("F" + f'{i}')
+            self.hotkeyRuneList_comboBox.addItem("F" + f'{i}')
 
-        # Labels
-        manaList_label = QLabel("MP:", self)
-        manaList_label.setFixedWidth(200)
-        healthList_label = QLabel("HP %", self)
-        healthList_label.setFixedWidth(40)
-
-        # Edit Lines
-        self.manaPoints_line = QLineEdit()
-        self.healthPointsHotkey_line = QLineEdit()
-        self.healthPointsHotkey_line.setFixedWidth(30)
-        self.healthPointsHotkey_line.setMaxLength(3)
+        # Combo Boxes Functions
+        self.hotkeyRuneList_comboBox.currentIndexChanged.connect(self.runeHotkeyListChange)
+        self.hpMana_comboBox.currentIndexChanged.connect(self.runeHotkeyListChange)
 
         # QHBox
-        layout1 = QHBoxLayout()
-        layout1.addWidget(healthList_label)
-        layout1.addWidget(manaList_label)
-        layout2 = QHBoxLayout()
-        layout2.addWidget(self.healthPointsHotkey_line)
-        layout2.addWidget(self.manaPoints_line)
-        layout2.addWidget(self.hotkeyList_comboBox)
-        layout2.addWidget(addHotkey_button)
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout(self)
+        layout3 = QHBoxLayout(self)
+        layout4 = QHBoxLayout(self)
+
+        # Add Widgets
+        layout1.addWidget(self.hpMana_comboBox)
+        layout1.addWidget(self.hotkeyRuneList_comboBox)
+        layout2.addWidget(QLabel("Below:", self))
+        layout2.addWidget(self.hpBelow_line)
+        layout2.addWidget(QLabel("Above:", self))
+        layout2.addWidget(self.hpAbove_line)
+        layout3.addWidget(self.mp_label)
+        layout3.addWidget(self.minMp_line)
+        layout4.addWidget(addHotkey_button)
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox.setFixedSize(200, 80)
-        self.layout.addWidget(groupbox, 0, 1, alignment=Qt.AlignTop | Qt.AlignLeft)
+        groupbox_layout.addLayout(layout3)
+        groupbox_layout.addLayout(layout4)
+        self.layout.addWidget(groupbox, 0, 1)
 
-    def groupbox3(self) -> None:
-        groupbox = QGroupBox("Set Heal Rune")
-        groupbox_layout = QVBoxLayout()
+    def startHealing(self):
+        groupbox = QGroupBox("Start")
+        groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
-        # Buttons
-        addRune_button = QPushButton("Add", self)
-        addRune_button.clicked.connect(self.addRune)
-        self.setRune_button = QPushButton("Select Rune", self)
-        self.setRune_button.clicked.connect(self.setRune_thread)
-
-        # Labels
-        healthList_label = QLabel("HP %", self)
-        healthList_label.setFixedWidth(300)
-
-        # Edit Lines
-        self.healthPointsRune_line = QLineEdit()
-        self.healthPointsRune_line.setFixedWidth(30)
-        self.healthPointsRune_line.setMaxLength(3)
+        # Check Boxes Functions
+        self.startHealing_checkBox.stateChanged.connect(self.checkStartState)
 
         # QHBox
-        layout1 = QHBoxLayout()
-        layout1.addWidget(healthList_label)
-        layout2 = QHBoxLayout()
-        layout2.addWidget(self.healthPointsRune_line)
-        layout2.addWidget(self.setRune_button)
-        layout2.addWidget(addRune_button)
+        layout1 = QHBoxLayout(self)
 
-        # Add Layouts
-        groupbox_layout.addLayout(layout1)
-        groupbox_layout.addLayout(layout2)
-        groupbox.setFixedSize(200, 80)
-        self.layout.addWidget(groupbox, 1, 1, alignment=Qt.AlignTop)
-
-    def groupbox4(self) -> None:
-        groupbox = QGroupBox("Start Healing")
-        groupbox_layout = QVBoxLayout()
-        groupbox.setLayout(groupbox_layout)
-
-        # Check Boxes
-        self.startHealing_checkBox = QCheckBox(self)
-        self.startHealing_checkBox.stateChanged.connect(self.startHealing_thread)
-
-        # Labels
-        startHealing_label = QLabel("Start Healer", self)
-        startHealing_label.setFixedWidth(200)
-
-        # QHBox
-        layout1 = QHBoxLayout()
+        # Add Widgets
         layout1.addWidget(self.startHealing_checkBox)
-        layout1.addWidget(startHealing_label)
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
-        groupbox.setFixedSize(200, 80)
-        self.layout.addWidget(groupbox, 2, 1, alignment=Qt.AlignTop)
+        self.layout.addWidget(groupbox, 1, 1, 1, 1, alignment=Qt.AlignTop)
 
-    def addHotkey(self) -> None:
-        hotkey = self.hotkeyList_comboBox.currentText()
-        if hotkey and self.healthPointsHotkey_line.text() and self.manaPoints_line.text():
-            self.healing_listWidget.addItem('HP=' + f'{self.healthPointsHotkey_line.text()}' + '% MP=' + f'{self.manaPoints_line.text()}' + ' hotkey:' + hotkey)
+    def runeHotkeyListChange(self):
+        if self.hotkeyRuneList_comboBox.currentIndex() != 0 and self.hpMana_comboBox.currentIndex() < 2:
+            self.mp_label.show()
+            self.minMp_line.show()
+            self.minMp_line.setEnabled(True)
+        else:
+            self.mp_label.hide()
+            self.minMp_line.hide()
+            self.minMp_line.setEnabled(False)
 
-    def setRune_thread(self) -> None:
-        thread = Thread(target=self.setRune)
-        thread.daemon = True
-        thread.start()
-        return
+    def addHealing(self) -> None:
+        healName = self.hotkeyRuneList_comboBox.currentText()
+        healName += " " + self.hpMana_comboBox.currentText()
+        if self.minMp_line.text() == "":
+            self.minMp_line.setText("0")
+        if healName:
+            healData = {"Type": self.hpMana_comboBox.currentText(),
+                        "Option": self.hotkeyRuneList_comboBox.currentText(),
+                        "Below": int(self.hpBelow_line.text()),
+                        "Above": int(self.hpAbove_line.text()),
+                        "MinMp": int(self.minMp_line.text())}
+            heal = QListWidgetItem(healName)
+            heal.setData(Qt.UserRole, healData)
+            self.healList_listWidget.addItem(heal)
+            self.hpAbove_line.clear()
+            self.hpBelow_line.clear()
+            self.minMp_line.clear()
 
-    def setRune(self) -> None:
-        while True:
-            x, y = win32api.GetCursorPos()
-            self.setRune_button.setText(str(x) + "| " + str(y))
-            if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
-                x, y = win32gui.ScreenToClient(game, (x, y))
-                self.runeX = x
-                self.runeY = y
-                self.setRune_button.setText("Select Rune")
-                return
-
-    def addRune(self):
-        if self.runeX != 0 and self.healthPointsRune_line.text():
-            self.healing_listWidget.addItem('HP=' + f'{self.healthPointsRune_line.text()}' + '% runePos:x=' + f'{self.runeX}' + '|y=' + f'{self.runeY}')
-
-    def startHealing_thread(self) -> None:
-        thread = Thread(target=self.startHealing)
+    def checkStartState(self) -> None:
+        thread = Thread(target=self.startHealing_Thread)
         thread.daemon = True
         if self.startHealing_checkBox.checkState() == 2:
             thread.start()
 
-    def startHealing(self) -> None:
-        maxHP = read_pointer(myStatsPtr, myHPMAXOffset)
-        maxHP = c.c_double.from_buffer(maxHP).value
-        while self.startHealing_checkBox.checkState():
-            for index in range(self.healing_listWidget.count()):
-                item = self.healing_listWidget.item(index)
-                item = item.text()
-                hpHeal = item.split('%')[0]
-                hpHeal = hpHeal[3:]
-                hpHeal = float(hpHeal)
-                hotkey = item.split(':')[1]
-                myHp = read_pointer(myStatsPtr, myHPOffset)
-                myHp = c.c_double.from_buffer(myHp).value
-                myMana = read_pointer(myStatsPtr, myMPOffset)
-                myMana = c.c_double.from_buffer(myMana).value
-                if len(hotkey) <= 3:
-                    hotkey = hotkey[1:]
-                    hotkey = int(hotkey)
-                    mana_heal = item.split('MP=')[1]
-                    mana_heal = mana_heal.split('h')[0]
-                    mana_heal = float(mana_heal)
-                    if (myHp <= (maxHP * 0.01 * hpHeal)) and myMana >= mana_heal:
-                        press_hotkey(hotkey)
-                        time.sleep(0.3)
+    def startHealing_Thread(self):
+        while self.startHealing_checkBox.checkState() == 2:
+            for healIndex in range(self.healList_listWidget.count()):
+                healData = self.healList_listWidget.item(healIndex).data(Qt.UserRole)
+                healType = healData['Type']
+                healOption = healData['Option']
+                healBelow = healData['Below']
+                healAbove = healData['Above']
+                healMinMP = healData['MinMp']
+                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                myMaxHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPMAXOffset)).value
+                myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                myMaxMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPMAXOffset)).value
+                if healType[0:2] == "HP":
+                    if healOption == "UH":
+                        if '%' in healType:
+                            lock_acquired = False
+                            try:
+                                while healAbove <= (myHp * 100 / myMaxHp) < healBelow:
+                                    if not lock_acquired:
+                                        lock.acquire()
+                                        lock_acquired = True
+                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                    useOnMe(bpX[4], bpY[4])
+                                    time.sleep(0.5)
+                            finally:
+                                if lock_acquired:
+                                    lock.release()
+                        else:
+                            lock_acquired = False
+                            try:
+                                while healAbove <= myHp < healBelow:
+                                    if not lock_acquired:
+                                        lock.acquire()
+                                        lock_acquired = True
+                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                    useOnMe(bpX[4], bpY[4])
+                                    time.sleep(0.5)
+                            finally:
+                                if lock_acquired:
+                                    lock.release()
+                    else:
+                        if '%' in healType:
+                            lock_acquired = False
+                            try:
+                                while healAbove <= (myHp * 100 / myMaxHp) < healBelow and myMp >= healMinMP:
+                                    if not lock_acquired:
+                                        lock.acquire()
+                                        lock_acquired = True
+                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                    myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                                    pressHotkey(int(healOption[1:]))
+                                    time.sleep(0.5)
+                            finally:
+                                if lock_acquired:
+                                    lock.release()
+                        else:
+                            lock_acquired = False
+                            try:
+                                while healAbove <= myHp < healBelow and myMp >= healMinMP:
+                                    if not lock_acquired:
+                                        lock.acquire()
+                                        lock_acquired = True
+                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                    myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                                    pressHotkey(int(healOption[1:]))
+                                    time.sleep(0.5)
+                            finally:
+                                if lock_acquired:
+                                    lock.release()
                 else:
-                    x = hotkey.split('x=')[1]
-                    x = x.split('|')[0]
-                    x = int(x)
-                    y = hotkey.split('y=')[1]
-                    y = int(y)
-                    if myHp <= (maxHP * 0.01 * hpHeal):
-                        use_on_myself(x, y)
-                        time.sleep(0.3)
-                time.sleep(0.2)
+                    if '%' in healType:
+                        lock_acquired = False
+                        try:
+                            while healAbove <= (myMp * 100 / myMaxMp) < healBelow:
+                                if not lock_acquired:
+                                    lock.acquire()
+                                    lock_acquired = True
+                                myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                                useOnMe(bpX[4], bpY[4])
+                                time.sleep(0.5)
+                        finally:
+                            if lock_acquired:
+                                lock.release()
+
+
 
