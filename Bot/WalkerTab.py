@@ -6,21 +6,25 @@ class CaveTab(QWidget):
         super().__init__()
 
         # Variables
-        self.waypointProfile_listWidget = None
-        self.waypointProfile_line = None
-        self.recordCaveBot_checkBox = None
-        self.startCaveBot_checkBox = None
-        self.waypoint_listWidget = None
+        self.waypoint_listWidget = QListWidget(self)
+        self.waypointProfile_listWidget = QListWidget(self)
+        self.waypointProfile_lineEdit = QLineEdit(self)
+        self.actionWaypoint_textEdit = QTextEdit(self)
+        self.recordCaveBot_checkBox = QCheckBox("Auto Recording", self)
+        self.startCaveBot_checkBox = QCheckBox("Start Walker", self)
+
+        self.waypointOption_comboBox = QComboBox(self)
 
         self.layout = QGridLayout()
         self.setLayout(self.layout)
-        self.groupbox1()
-        self.groupbox2()
-        self.groupbox3()
+        self.saveLoadWaypoints()
+        self.waypointList()
+        self.addWaypoins()
+        self.startWalker()
 
-    def groupbox1(self) -> None:
-        groupbox = QGroupBox("Save&&Load Waypoints")
-        groupbox_layout = QVBoxLayout()
+    def saveLoadWaypoints(self) -> None:
+        groupbox = QGroupBox("Save&&Load")
+        groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
@@ -30,22 +34,17 @@ class CaveTab(QWidget):
         loadWaypointProfile_button = QPushButton("Load")
         loadWaypointProfile_button.clicked.connect(self.loadWaypointProfile)
 
-        # Labels
-        waypointProfile_label = QLabel("Name:", self)
-
-        # Edit Lines
-        self.waypointProfile_line = QLineEdit()
-
         # List Widgets
-        self.waypointProfile_listWidget = QListWidget(self)
         for file in os.listdir("Waypoints"):
             self.waypointProfile_listWidget.addItem(f"{file.split('.')[0]}")
 
         # QHBox
-        layout1 = QHBoxLayout()
-        layout1.addWidget(waypointProfile_label)
-        layout1.addWidget(self.waypointProfile_line)
-        layout2 = QHBoxLayout()
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout(self)
+
+        # Add Widgets
+        layout1.addWidget(QLabel("Name:", self))
+        layout1.addWidget(self.waypointProfile_lineEdit)
         layout2.addWidget(saveWaypointProfile_button)
         layout2.addWidget(loadWaypointProfile_button)
 
@@ -54,9 +53,9 @@ class CaveTab(QWidget):
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
         groupbox.setFixedWidth(150)
-        self.layout.addWidget(groupbox, 1, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
+        self.layout.addWidget(groupbox, 2, 0)
 
-    def groupbox2(self) -> None:
+    def waypointList(self) -> None:
         groupbox = QGroupBox("Waypoints")
         groupbox_layout = QVBoxLayout()
         groupbox.setLayout(groupbox_layout)
@@ -68,9 +67,6 @@ class CaveTab(QWidget):
         clearWaypointList_button = QPushButton("Clear", self)
         clearWaypointList_button.clicked.connect(self.clearWaypointList)
 
-        # List Widgets
-        self.waypoint_listWidget = QListWidget(self)
-
         # QHBox
         layout1 = QHBoxLayout()
         layout1.addWidget(deleteWaypoint_button)
@@ -79,83 +75,88 @@ class CaveTab(QWidget):
         # Add Layouts
         groupbox_layout.addWidget(self.waypoint_listWidget)
         groupbox_layout.addLayout(layout1)
-        groupbox.setFixedSize(175, 250)
-        self.layout.addWidget(groupbox, 0, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
+        groupbox.setFixedSize(150, 250)
+        self.layout.addWidget(groupbox, 0, 0, 2, 1)
 
-    def groupbox3(self) -> None:
+    def addWaypoins(self) -> None:
         groupbox = QGroupBox("Add Waypoints")
-        groupbox_layout = QVBoxLayout()
+        groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
+        # Combo Boxes
+        self.waypointOption_comboBox.addItem("Center")
+        self.waypointOption_comboBox.addItem("North")
+        self.waypointOption_comboBox.addItem("South")
+        self.waypointOption_comboBox.addItem("East")
+        self.waypointOption_comboBox.addItem("West")
+        self.waypointOption_comboBox.addItem("North-East")
+        self.waypointOption_comboBox.addItem("North-West")
+        self.waypointOption_comboBox.addItem("South-East")
+        self.waypointOption_comboBox.addItem("South-West")
+
         # Buttons
-        addWaypointStand_button = QPushButton("Stand", self)
+        standWaypoint_button = QPushButton("Stand", self)
+        ropeWaypoint_button = QPushButton("Rope", self)
+        shovelWaypoint_button = QPushButton("Shovel", self)
+        pickWaypoint_button = QPushButton("Pick", self)
+        actionWaypoint_button = QPushButton("Action", self)
+        lureWaypoint_button = QPushButton("Lure", self)
 
-        addWaypointNorth_button = QPushButton("North", self)
-
-        addWaypointSouth_button = QPushButton("South", self)
-
-        addWaypointEast_button = QPushButton("East", self)
-
-        addWaypointWest_button = QPushButton("West", self)
-
-        addWaypointAction_button = QPushButton("Action", self)
-
-        addWaypointLadder_button = QPushButton("Ladder", self)
-
-        addWaypointShovel_button = QPushButton("Shovel", self)
-
-        addWaypointLure_button = QPushButton("Ladder", self)
-
-        # Check Boxes
-        self.startCaveBot_checkBox = QCheckBox(self)
-        self.startCaveBot_checkBox.setFixedWidth(15)
-        self.startCaveBot_checkBox.stateChanged.connect(self.startWalker_thread)
-        self.recordCaveBot_checkBox = QCheckBox(self)
-        self.recordCaveBot_checkBox.setFixedWidth(15)
-        self.recordCaveBot_checkBox.stateChanged.connect(self.startRecord_thread)
-
-        # Labels
-        startCaveBot_label = QLabel("Follow Waypoints", self)
-        recordCaveBot_label = QLabel("Auto Recording", self)
+        # Line Edits
+        self.actionWaypoint_textEdit.setFixedHeight(100)
 
         # QHBox
-        layout1 = QHBoxLayout()
-        layout1.addWidget(addWaypointStand_button)
-        layout1.addWidget(addWaypointNorth_button)
-        layout1.addWidget(addWaypointAction_button)
-        layout2 = QHBoxLayout()
-        layout2.addWidget(addWaypointWest_button)
-        layout2.addWidget(addWaypointSouth_button)
-        layout2.addWidget(addWaypointEast_button)
-        layout3 = QHBoxLayout()
-        layout3.addWidget(addWaypointLadder_button)
-        layout3.addWidget(addWaypointShovel_button)
-        layout3.addWidget(addWaypointLure_button)
-        layout4 = QHBoxLayout()
-        layout4.addWidget(self.recordCaveBot_checkBox)
-        layout4.addWidget(recordCaveBot_label)
-        layout5 = QHBoxLayout()
-        layout5.addWidget(self.startCaveBot_checkBox)
-        layout5.addWidget(startCaveBot_label)
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout(self)
+        layout3 = QHBoxLayout(self)
+        layout4 = QHBoxLayout(self)
+
+        # Add Widgets
+        layout1.addWidget(self.waypointOption_comboBox)
+        layout2.addWidget(standWaypoint_button)
+        layout2.addWidget(ropeWaypoint_button)
+        layout2.addWidget(shovelWaypoint_button)
+        layout3.addWidget(pickWaypoint_button)
+        layout3.addWidget(actionWaypoint_button)
+        layout3.addWidget(lureWaypoint_button)
+        layout4.addWidget(self.actionWaypoint_textEdit)
+
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
         groupbox_layout.addLayout(layout3)
         groupbox_layout.addLayout(layout4)
-        groupbox_layout.addLayout(layout5)
-        groupbox.setFixedWidth(200)
-        self.layout.addWidget(groupbox, 0, 1, alignment=Qt.AlignTop | Qt.AlignLeft)
+
+        self.layout.addWidget(groupbox, 0, 1, 2, 1)
+
+    def startWalker(self) -> None:
+        groupbox = QGroupBox("Start")
+        groupbox_layout = QVBoxLayout(self)
+        groupbox.setLayout(groupbox_layout)
+
+        # QHBox
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout(self)
+
+        # Add Widgets
+        layout1.addWidget(self.startCaveBot_checkBox)
+        layout2.addWidget(self.recordCaveBot_checkBox)
+
+        # Add Layouts
+        groupbox_layout.addLayout(layout1)
+        groupbox_layout.addLayout(layout2)
+        self.layout.addWidget(groupbox, 2, 1)
 
     # Save Waypoints To waypoint_listWidget
     def saveWaypointProfile(self) -> None:
-        profile_name = self.waypointProfile_line.text()
+        profile_name = self.waypointProfile_lineEdit.text()
         if profile_name:
             f = open("Waypoints/"f"{profile_name}.txt", "w")
             [f.write(f'{self.waypoint_listWidget.item(i).text()}\n') for i in range(self.waypoint_listWidget.count())]
             f.close()
             self.waypointProfile_listWidget.addItem(profile_name)
-            self.waypointProfile_line.clear()
+            self.waypointProfile_lineEdit.clear()
 
     # Load Waypoint Profile To waypoint_listWidget
     def loadWaypointProfile(self) -> None:
@@ -170,8 +171,8 @@ class CaveTab(QWidget):
             f.close()
 
     # Delete Selected Waypoint from waypoint_listWidget
-    def deleteWaypoint(self) -> None:
-        print("xd")
+    def deleteWaypoint(self, index) -> None:
+        self.waypoint_listWidget.takeItem(index)
 
     # Clear all Waypoints from waypoint_listWidget
     def clearWaypointList(self) -> None:

@@ -102,13 +102,11 @@ class LootTab(QWidget):
         rope_button = QPushButton("Rope", self)
         shovel_button = QPushButton("Shovel", self)
         pick_button = QPushButton("Pick", self)
-        knife_button = QPushButton("Skin Knife", self)
 
         # Buttons Functions
         shovel_button.clicked.connect(lambda: self.setBP(8))
         rope_button.clicked.connect(lambda: self.setBP(9))
         pick_button.clicked.connect(lambda: self.setBP(10))
-        knife_button.clicked.connect(lambda: self.setBP(11))
 
         # QHBox
         layout = QHBoxLayout(self)
@@ -122,7 +120,6 @@ class LootTab(QWidget):
         layout1.addWidget(shovel_button)
         layout2.addWidget(rope_button)
         layout3.addWidget(pick_button)
-        layout4.addWidget(knife_button)
 
         # Add Layouts
         groupbox_layout.addLayout(layout)
