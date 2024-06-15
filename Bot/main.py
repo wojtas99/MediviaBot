@@ -2,10 +2,11 @@ import time
 
 from Functions import *
 from HealingTab import HealingTab
-from TrainingTab import SkillTab
+from Training import TrainingTab
 from Walker import WalkerTab
 from TargetLoot import TargetLootTab
 from Settings import SettingsTab
+from SmartHotkeys import SmartHotkeysTab
 import urllib
 from urllib import request
 from PIL import ImageSequence
@@ -54,6 +55,8 @@ class MainWindow(QWidget):
         self.walkerTab_instance = None
         self.healingTab_instance = None
         self.settingsTab_instance = None
+        self.trainingTab_instance = None
+        self.smartHotkeysTab_instance = None
 
         # Layout
         self.layout = QGridLayout(self)
@@ -64,18 +67,34 @@ class MainWindow(QWidget):
         self.walkerTab_button = QPushButton('Walker', self)
         self.healingTab_button = QPushButton('Healing', self)
         self.settingsTab_button = QPushButton('Settings', self)
+        self.smartHotkeysTab_button = QPushButton('Smart Hotkeys', self)
+        self.trainingTab_button = QPushButton('Skill', self)
 
         # Buttons Functions
         self.targetLootTab_button.clicked.connect(self.targetLoot)
         self.walkerTab_button.clicked.connect(self.walker)
         self.healingTab_button.clicked.connect(self.healing)
         self.settingsTab_button.clicked.connect(self.settings)
+        self.smartHotkeysTab_button.clicked.connect(self.smartHotkeys)
+        self.trainingTab_button.clicked.connect(self.training)
 
         # Add Widgets
         self.layout.addWidget(self.walkerTab_button, 0, 0)
         self.layout.addWidget(self.targetLootTab_button, 1, 0)
         self.layout.addWidget(self.healingTab_button, 0, 1)
         self.layout.addWidget(self.settingsTab_button, 1, 1)
+        self.layout.addWidget(self.smartHotkeysTab_button, 0, 2)
+        self.layout.addWidget(self.trainingTab_button, 1, 2)
+
+    def smartHotkeys(self):
+        if self.smartHotkeysTab_instance is None:
+            self.smartHotkeysTab_instance = SmartHotkeysTab()
+        self.smartHotkeysTab_instance.show()
+
+    def training(self):
+        if self.trainingTab_instance is None:
+            self.trainingTab_instance = TrainingTab()
+        self.trainingTab_instance.show()
 
     def settings(self):
         if self.settingsTab_instance is None:

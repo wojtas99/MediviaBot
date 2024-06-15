@@ -11,17 +11,26 @@ class WalkerTab(QWidget):
         self.setWindowTitle("Walker")
         self.setFixedSize(350, 350)
         # Variables
+        # List Widgets
         self.waypoint_listWidget = QListWidget(self)
         self.waypointProfile_listWidget = QListWidget(self)
+
+        # Line/Text Edits
         self.waypointProfile_lineEdit = QLineEdit(self)
         self.actionWaypoint_textEdit = QTextEdit(self)
+
+        # Check Boxes
         self.recordCaveBot_checkBox = QCheckBox("Auto Recording", self)
         self.startCaveBot_checkBox = QCheckBox("Start Walker", self)
 
+        # Combo Boxes
         self.waypointOption_comboBox = QComboBox(self)
 
+        # Layouts
         self.layout = QGridLayout()
         self.setLayout(self.layout)
+
+        # Initialize
         self.saveLoadWaypoints()
         self.waypointList()
         self.addWaypoins()
@@ -71,6 +80,9 @@ class WalkerTab(QWidget):
         clearWaypointList_button = QPushButton("Clear", self)
         clearWaypointList_button.clicked.connect(self.clearWaypointList)
 
+        # List Widgets Functions
+        self.waypoint_listWidget.currentItemChanged.connect(self.checkWaypoint)
+
         # QHBox
         layout1 = QHBoxLayout()
         layout1.addWidget(deleteWaypoint_button)
@@ -105,6 +117,14 @@ class WalkerTab(QWidget):
         actionWaypoint_button = QPushButton("Action", self)
         labelWaypoint_button = QPushButton("Label", self)
 
+        # Button Functions
+        standWaypoint_button.clicked.connect(lambda: self.addWaypoint(0))
+        ropeWaypoint_button.clicked.connect(lambda: self.addWaypoint(1))
+        shovelWaypoint_button.clicked.connect(lambda: self.addWaypoint(2))
+        pickWaypoint_button.clicked.connect(lambda: self.addWaypoint(3))
+        actionWaypoint_button.clicked.connect(lambda: self.addWaypoint(4))
+        labelWaypoint_button.clicked.connect(lambda: self.addWaypoint(5))
+
         # Line Edits
         self.actionWaypoint_textEdit.setFixedHeight(100)
 
@@ -123,7 +143,6 @@ class WalkerTab(QWidget):
         layout3.addWidget(shovelWaypoint_button)
         layout3.addWidget(pickWaypoint_button)
         layout4.addWidget(self.actionWaypoint_textEdit)
-
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
@@ -172,6 +191,57 @@ class WalkerTab(QWidget):
                 if waypoint != '\n':
                     self.waypoint_listWidget.addItem(waypoint.split("\n")[0])
             f.close()
+
+    # Check Waypoints
+    def checkWaypoint(self):
+        waypoint = self.waypoint_listWidget.item(self.waypoint_listWidget.currentRow()).data(Qt.UserRole)
+        if waypoint:
+            self.actionWaypoint_textEdit.setText(waypoint['Action'])
+        else:
+            self.actionWaypoint_textEdit.clear()
+
+    # Add Waypoints
+    def addWaypoint(self, index):
+        if index == 0:  # Stand
+            x = c.c_int.from_buffer(readMemory(myX, 0)).value
+            y = c.c_int.from_buffer(readMemory(myY, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
+            waypointDirection = self.waypointOption_comboBox.currentText()
+            self.waypoint_listWidget.addItem(f'Stand: {x} {y} {z}')
+        elif index == 1:  # Rope
+            x = c.c_int.from_buffer(readMemory(myX, 0)).value
+            y = c.c_int.from_buffer(readMemory(myY, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
+            waypointDirection = self.waypointOption_comboBox.currentText()
+            self.waypoint_listWidget.addItem(f'Rope: {x} {y} {z}')
+        elif index == 2:  # Shovel
+            x = c.c_int.from_buffer(readMemory(myX, 0)).value
+            y = c.c_int.from_buffer(readMemory(myY, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
+            waypointDirection = self.waypointOption_comboBox.currentText()
+            self.waypoint_listWidget.addItem(f'Shovel: {x} {y} {z}')
+        elif index == 3:  # Pick
+            x = c.c_int.from_buffer(readMemory(myX, 0)).value
+            y = c.c_int.from_buffer(readMemory(myY, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
+            waypointDirection = self.waypointOption_comboBox.currentText()
+            self.waypoint_listWidget.addItem(f'Pick: {x} {y} {z}')
+        elif index == 4:  # Action
+            x = c.c_int.from_buffer(readMemory(myX, 0)).value
+            y = c.c_int.from_buffer(readMemory(myY, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
+            actionText = self.actionWaypoint_textEdit.document().toRawText()
+            if actionText:
+                actionData = {"Action": actionText}
+                action = QListWidgetItem(f'Action: {x} {y} {z}')
+                action.setData(Qt.UserRole, actionData)
+                self.waypoint_listWidget.addItem(action)
+                self.actionWaypoint_textEdit.clear()
+        elif index == 5:  # Label
+            labelName = self.actionWaypoint_textEdit.document().toRawText()
+            if labelName:
+                self.waypoint_listWidget.addItem(labelName)
+                self.actionWaypoint_textEdit.clear()
 
     # Delete Selected Waypoint from waypoint_listWidget
     def deleteWaypoint(self, index) -> None:

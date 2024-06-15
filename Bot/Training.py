@@ -3,7 +3,7 @@ import random
 from Functions import *
 
 
-class SkillTab(QWidget):
+class TrainingTab(QWidget):
     def __init__(self):
         super().__init__()
         # Variables
@@ -113,8 +113,6 @@ class SkillTab(QWidget):
         self.setWater_button = QPushButton("Select Water", self)
         self.setWater_button.clicked.connect(self.setWater_thread)
 
-        self.setBait_button = QPushButton("Select Bait", self)
-        self.setBait_button.clicked.connect(self.setBait_thread)
 
         # Check Boxes
         self.startFishing_checkBox = QCheckBox(self)
@@ -129,8 +127,6 @@ class SkillTab(QWidget):
         layout1.addWidget(self.setFishingRod_button)
         layout2 = QHBoxLayout()
         layout2.addWidget(self.setWater_button)
-        layout3 = QHBoxLayout()
-        layout3.addWidget(self.setBait_button)
         layout4 = QHBoxLayout()
         layout4.addWidget(self.startFishing_checkBox)
         layout4.addWidget(startFishing_label)
@@ -138,9 +134,7 @@ class SkillTab(QWidget):
         # Add Layouts
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox_layout.addLayout(layout3)
         groupbox_layout.addLayout(layout4)
-        groupbox.setFixedSize(150, 120)
         self.layout.addWidget(groupbox, 1, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
 
     def addHotkey(self) -> None:

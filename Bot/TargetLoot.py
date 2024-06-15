@@ -22,7 +22,7 @@ class TargetLootTab(QWidget):
         self.startTarget_checkBox = QCheckBox("Start Targeting", self)
 
         # Combo Boxes
-        self.runeList_comboBox = QComboBox(self)
+        self.actionList_comboBox = QComboBox(self)
         self.attackDist_comboBox = QComboBox(self)
 
         # Line Edits
@@ -46,7 +46,7 @@ class TargetLootTab(QWidget):
         self.layout = QGridLayout(self)
         self.setLayout(self.layout)
 
-        # Init View
+        # Initialize
         self.targetList()
         self.saveLoadTargetLoot()
         self.setTarget()
@@ -126,10 +126,13 @@ class TargetLootTab(QWidget):
         self.startTarget_checkBox.stateChanged.connect(self.createTargetImages)
 
         # Combo Boxes
-        self.runeList_comboBox.addItem("NoRune")
-        self.runeList_comboBox.addItem("HMM")
-        self.runeList_comboBox.addItem("GFB")
-        self.runeList_comboBox.addItem("SD")
+        self.actionList_comboBox.addItem("NoRune")
+        self.actionList_comboBox.addItem("HMM")
+        self.actionList_comboBox.addItem("GFB")
+        self.actionList_comboBox.addItem("SD")
+        for i in range(1, 13):
+            self.actionList_comboBox.addItem(f"F{i}")
+
         self.attackDist_comboBox.addItem("All")
         self.attackDist_comboBox.addItem("1")
         self.attackDist_comboBox.addItem("2")
@@ -138,7 +141,7 @@ class TargetLootTab(QWidget):
         self.attackDist_comboBox.addItem("5")
 
         # Combo Boxes Functions
-        self.runeList_comboBox.currentIndexChanged.connect(self.runeListChange)
+        self.actionList_comboBox.currentIndexChanged.connect(self.runeListChange)
 
         # Line Edit
         self.hpFrom_lineEdit.setEnabled(False)
@@ -155,8 +158,8 @@ class TargetLootTab(QWidget):
         layout1.addWidget(addTarget_button)
         layout2.addWidget(QLabel("Attack Distance:", self))
         layout2.addWidget(self.attackDist_comboBox)
-        layout3.addWidget(QLabel("Use Rune:", self))
-        layout3.addWidget(self.runeList_comboBox)
+        layout3.addWidget(QLabel("Action:", self))
+        layout3.addWidget(self.actionList_comboBox)
         layout4.addWidget(QLabel("From:", self))
         layout4.addWidget(self.hpFrom_lineEdit)
         layout4.addWidget(QLabel("% To:", self))
@@ -251,7 +254,7 @@ class TargetLootTab(QWidget):
             if monsterName.upper() == self.targetList_listWidget.item(index).text().split(' | ')[0].upper():
                 return
         monsterData = {"Distance": self.attackDist_comboBox.currentText(),
-                        "Rune": self.runeList_comboBox.currentText(),
+                        "Rune": self.actionList_comboBox.currentText(),
                         "HpFrom": self.hpFrom_lineEdit.text(), "HpTo": self.hpTo_lineEdit.text()}
         monster = QListWidgetItem(monsterName)
         if monsterData['Distance'] == 'All':
@@ -269,7 +272,7 @@ class TargetLootTab(QWidget):
         if monsterData['Rune'] == 'NoRune':
             monsterData['Rune'] = 0
         monster.setData(Qt.UserRole, monsterData)
-        self.runeList_comboBox.setCurrentIndex(0)
+        self.actionList_comboBox.setCurrentIndex(0)
         self.attackDist_comboBox.setCurrentIndex(0)
         self.targetName_lineEdit.clear()
         self.hpFrom_lineEdit.clear()
