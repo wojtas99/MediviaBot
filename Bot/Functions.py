@@ -32,6 +32,9 @@ myHPMAXOffset = [0x560]
 myMPOffset = [0x590]
 myMPMAXOffset = [0x598]
 
+monstersOnScreenPtr = 0x00C72C50
+monstersOnScreenOffset = [0xC80, 0X338, 0X138, 0XFE0, 0X764]
+
 containerPtr = 0x00C6FDD0
 containerOffset = [0XE8, 0X2B0, 0X0, 0X1D8, 0XEA8]
 

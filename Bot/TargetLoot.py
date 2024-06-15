@@ -1,3 +1,4 @@
+import ctypes
 import json
 import time
 
@@ -351,111 +352,35 @@ class TargetLootTab(QWidget):
 
     # Target monsters
     def startAttackLoot_Thread(self) -> None:
-        wincapTarget = WindowCapture('Medivia - ' + nickname, screenWidth[0] - screenX[0], screenHeight[0] - screenY[0], screenX[0] + 10, screenY[0] + 25)
-        wincapLoot = WindowCapture('Medivia - ' + nickname, screenWidth[1] - screenX[1], screenHeight[1] - screenY[1], screenX[1], screenY[1])
-        hsvColor = cv.cvtColor(np.uint8([[[138, 148, 255]]]), cv.COLOR_BGR2HSV)
-        lowerFilter = np.array([hsvColor[0][0][0] - 10, 180, 145])
-        upperFilter = np.array([hsvColor[0][0][0] + 10, 185, 255])
-        sqmSize = int((screenWidth[0] - screenX[0]) / 15.5)
-        characterX = int(sqmSize*7.5 + screenX[0])
-        characterY = int(sqmSize*5.5 + screenY[0]) + 20
-        offsetX = int(sqmSize * 0.5)
-        offsetY = int(sqmSize * 0.6)
+        targetMonster = 0
+        timer = 0.0
+        targetHP = 0
         while self.startTarget_checkBox.checkState() == 2:
-            for targetIndex in range(self.targetList_listWidget.count()):
-                targetName = self.targetList_listWidget.item(targetIndex).text()
-                targetData = self.targetList_listWidget.item(targetIndex).data(Qt.UserRole)
-                targetDist = int(targetData['Distance'])
-                targetRune = int(targetData['Rune'])
-                targetHpFrom = int(targetData['HpFrom'])
-                targetHpTo = int(targetData['HpTo'])
-                if [x for x in os.listdir('TargetImages/') if x.split('.')[0] == targetName]:
-                    img = wincapTarget.get_screenshot()
-                    hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-                    mask = cv.inRange(hsv, lowerFilter, upperFilter)
-                    result = cv.bitwise_and(img, img, mask=mask)
-                    loadedImage = cv.imread('TargetImages/'f'{targetName}' + '.png')
-                    result = cv.matchTemplate(result, loadedImage, cv.TM_CCOEFF_NORMED)
-                    locations = list(zip(*(np.where(result >= 0.5)[::-1])))
-                    if locations:
-                        loot = 0
-                        locations = mergeClosePoints(locations, 10)
-                        locations = [(int(x) + screenX[0], int(y) + screenY[0] + 25) for x, y in locations]
-                        locations = sorted(locations, key=lambda point: sortMonstersByDist(point, characterX, characterY))
-                        targetID = c.c_ulonglong.from_buffer(readMemory(attack, 0)).value
-                        if targetID == 0:
-                            targetX, targetY = locations[0]
-                            targetX += offsetX
-                            targetY += offsetY
-                            if (targetDist != 0 and abs(targetX - characterX) < targetDist * (sqmSize + 25)
-                                    and abs(targetY - characterY) < targetDist * (sqmSize + 25)):
-                                rightClick(targetX, targetY)
-                            elif targetDist == 0:
-                                rightClick(targetX, targetY)
-                        while targetID:
-                            loot = 1
-                            targetID = c.c_ulonglong.from_buffer(readMemory(attack, 0)).value
-                            if targetID != 0:
-                                targetHP = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0xE8)).value
-                                targetY = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0x3C)).value
-                                targetX = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0x38)).value
-                                if targetRune != 0 and targetHpFrom >= targetHP > targetHpTo:
-                                    lock.acquire()
-                                    rightClick(bpX[targetRune], bpY[targetRune])
-                                    x = targetX - c.c_int.from_buffer(readMemory(myX, 0)).value
-                                    y = targetY - c.c_int.from_buffer(readMemory(myY, 0)).value
-                                    x = characterX + x * sqmSize
-                                    y = characterY + y * sqmSize
-                                    leftClick(x, y)
-                                    lock.release()
-                                    time.sleep(0.9)
-                            time.sleep(0.2)
-                        if loot and self.startLoot_checkBox.checkState() == 2:
-                            x = targetX - c.c_int.from_buffer(readMemory(myX, 0)).value
-                            y = targetY - c.c_int.from_buffer(readMemory(myY, 0)).value
-                            x = characterX + x * sqmSize
-                            y = characterY + y * sqmSize
-                            rightClick(x, y)
-                            time.sleep(0.3)
-                            for itemIndex in range(self.lootList_listWidget.count()):
-                                for _ in range(3):
-                                    itemName = self.lootList_listWidget.item(itemIndex).text()
-                                    itemData = self.lootList_listWidget.item(itemIndex).data(Qt.UserRole)
-                                    lootContainer = itemData['Loot']
-                                    file_name = [x for x in os.listdir('ItemImages/') if x.split('.')[0] == itemName]
-                                    if file_name:
-                                        screenshot = wincapLoot.get_screenshot()
-                                        if '.png' in file_name[0]:
-                                            loadedImage = cv.imread('ItemImages/'f'{itemName}' + '.png')
-                                            result = cv.matchTemplate(screenshot, loadedImage, cv.TM_CCOEFF_NORMED)
-                                            locations = list(zip(*(np.where(result >= 0.85))[::-1]))
-                                            locations = mergeClosePoints(locations, 15)
-                                            locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
-                                            locations = [[int(x), int(y)] for x, y in locations]
-                                            for x, y in locations:
-                                                if lootContainer > -1:
-                                                    collectItem(x + screenX[1], y + screenY[1], bpX[lootContainer],
-                                                                bpY[lootContainer])
-                                                elif lootContainer == -1:
-                                                    rightClick(x + screenX[1], y + screenY[1])
-                                                elif lootContainer == -2:
-                                                    dragDrop(x + screenX[1], y + screenY[1], characterX, characterY)
-                                                time.sleep(0.25)
-                                        else:
-                                            for itemName in os.listdir('ItemImages/' + file_name[0]):
-                                                loadedImage = cv.imread('ItemImages/'f'{file_name[0]}''/' + itemName)
-                                                result = cv.matchTemplate(screenshot, loadedImage, cv.TM_CCOEFF_NORMED)
-                                                locations = list(zip(*(np.where(result >= 0.70))[::-1]))
-                                                locations = mergeClosePoints(locations, 15)
-                                                locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
-                                                locations = [[int(x), int(y)] for x, y in locations]
-                                                for x, y in locations:
-                                                    if lootContainer > -1:
-                                                        collectItem(x + screenX[1], y + screenY[1], bpX[lootContainer],
-                                                                    bpY[lootContainer])
-                                                    elif lootContainer == -1:
-                                                        rightClick(x + screenX[1], y + screenY[1])
-                                                    elif lootContainer == -2:
-                                                        dragDrop(x + screenX[1], y + screenY[1], characterX, characterY)
-                                                    time.sleep(0.25)
-                time.sleep(0.1)
+            targetID = c.c_ulonglong.from_buffer(readMemory(attack, 0)).value
+            targetCount = c.c_int.from_buffer(readPointer(monstersOnScreenPtr, monstersOnScreenOffset)).value/25
+            if targetCount > 1 and targetID == 0:
+                win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0XC0, 0x290001)
+                win32gui.PostMessage(game, win32con.WM_KEYUP, 0XC0, 0xC0290001)
+                time.sleep(0.01)
+                targetID = c.c_ulonglong.from_buffer(readMemory(attack, 0)).value
+                targetMonster = 0
+                timer = 0
+                while targetID != 0:
+                    targetName = readMemory(targetID - baseAddress, 0xA8)
+                    targetName = b''.join(targetName).split(b'\x00', 1)[0].decode('utf-8')
+
+                    if targetMonster == 0:
+                        targetMonster = 1
+                        targetHP = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0xE8)).value
+                    targetActualHP = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0xE8)).value
+                    if targetActualHP == targetHP and timer > 3 or not self.targetList_listWidget.findItems(targetName, Qt.MatchFixedString):
+                        win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0XC0, 0x290001)
+                        win32gui.PostMessage(game, win32con.WM_KEYUP, 0XC0, 0xC0290001)
+                        time.sleep(0.01)
+                        timer = 0
+                        targetHP = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0xE8)).value
+                    time.sleep(0.01)
+                    timer += 0.01
+                    targetID = c.c_ulonglong.from_buffer(readMemory(attack, 0)).value
+
+            time.sleep(0.1)
