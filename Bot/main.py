@@ -119,8 +119,6 @@ class MainWindow(QWidget):
 
 def main():
     os.makedirs("Targeting", exist_ok=True)
-    os.makedirs("Looting", exist_ok=True)
-    os.makedirs("TargetImages", exist_ok=True)
     os.makedirs("Settings", exist_ok=True)
     os.makedirs("Waypoints", exist_ok=True)
     os.makedirs("ItemImages", exist_ok=True)

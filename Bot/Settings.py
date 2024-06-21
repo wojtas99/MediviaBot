@@ -1,7 +1,4 @@
 import json
-
-import win32gui
-
 from Functions import *
 
 
@@ -17,10 +14,10 @@ class SettingsTab(QWidget):
 
         # Variables
         # Labels
-        self.bp_label = QLabel("Set", self)
+        self.tools_label = QLabel("Set", self)
         self.screen_label = QLabel("Set", self)
 
-        self.bp_label.setFixedHeight(20)
+        self.tools_label.setFixedHeight(20)
         self.screen_label.setFixedHeight(20)
 
         # List Widgets
@@ -54,22 +51,18 @@ class SettingsTab(QWidget):
         gfbBP_button = QPushButton("GFB", self)
         rope_button = QPushButton("Rope", self)
         shovel_button = QPushButton("Shovel", self)
-        pick_button = QPushButton("Pick", self)
-        skinKnife_button = QPushButton("Skin Knife", self)
 
         # Buttons Functions
-        goldBP_button.clicked.connect(lambda: self.setBP(0))
-        itemBP1_button.clicked.connect(lambda: self.setBP(1))
-        itemBP2_button.clicked.connect(lambda: self.setBP(2))
-        itemBP3_button.clicked.connect(lambda: self.setBP(3))
-        uhBP_button.clicked.connect(lambda: self.setBP(4))
-        hmmBP_button.clicked.connect(lambda: self.setBP(5))
-        sdBP_button.clicked.connect(lambda: self.setBP(6))
-        gfbBP_button.clicked.connect(lambda: self.setBP(7))
-        shovel_button.clicked.connect(lambda: self.setBP(8))
-        rope_button.clicked.connect(lambda: self.setBP(9))
-        pick_button.clicked.connect(lambda: self.setBP(10))
-        skinKnife_button.clicked.connect(lambda: self.setBP(11))
+        goldBP_button.clicked.connect(lambda: self.setCoordinates(1))
+        itemBP1_button.clicked.connect(lambda: self.setCoordinates(2))
+        itemBP2_button.clicked.connect(lambda: self.setCoordinates(3))
+        itemBP3_button.clicked.connect(lambda: self.setCoordinates(4))
+        uhBP_button.clicked.connect(lambda: self.setCoordinates(5))
+        hmmBP_button.clicked.connect(lambda: self.setCoordinates(6))
+        sdBP_button.clicked.connect(lambda: self.setCoordinates(7))
+        gfbBP_button.clicked.connect(lambda: self.setCoordinates(8))
+        shovel_button.clicked.connect(lambda: self.setCoordinates(9))
+        rope_button.clicked.connect(lambda: self.setCoordinates(10))
 
         # QHBox
         layout = QHBoxLayout(self)
@@ -78,10 +71,9 @@ class SettingsTab(QWidget):
         layout3 = QHBoxLayout(self)
         layout4 = QHBoxLayout(self)
         layout5 = QHBoxLayout(self)
-        layout6 = QHBoxLayout(self)
 
         # Add Widgets
-        layout.addWidget(self.bp_label)
+        layout.addWidget(self.tools_label)
         layout1.addWidget(goldBP_button)
         layout1.addWidget(itemBP1_button)
         layout2.addWidget(itemBP2_button)
@@ -92,8 +84,6 @@ class SettingsTab(QWidget):
         layout4.addWidget(gfbBP_button)
         layout5.addWidget(rope_button)
         layout5.addWidget(shovel_button)
-        layout6.addWidget(pick_button)
-        layout6.addWidget(skinKnife_button)
 
         # Add Layouts
         groupbox_layout.addLayout(layout)
@@ -102,7 +92,6 @@ class SettingsTab(QWidget):
         groupbox_layout.addLayout(layout3)
         groupbox_layout.addLayout(layout4)
         groupbox_layout.addLayout(layout5)
-        groupbox_layout.addLayout(layout6)
         self.layout.addWidget(groupbox, 0, 1, 2, 1)
 
     def saveLoadSettings(self) -> None:
@@ -144,12 +133,12 @@ class SettingsTab(QWidget):
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
-        setMainScreen_button = QPushButton("Set Screen", self)
+        setCharacterPos_button = QPushButton("Set Character", self)
         setLootScreen_button = QPushButton("Set Loot", self)
 
         # Buttons Functions
-        setMainScreen_button.clicked.connect(lambda: self.setScreen(0))
-        setLootScreen_button.clicked.connect(lambda: self.setScreen(1))
+        setCharacterPos_button.clicked.connect(lambda: self.setCoordinates(0))
+        setLootScreen_button.clicked.connect(lambda: self.setScreen(0))
 
         # QHBox
         layout = QHBoxLayout(self)
@@ -158,7 +147,7 @@ class SettingsTab(QWidget):
 
         # Add Widgets
         layout.addWidget(self.screen_label)
-        layout1.addWidget(setMainScreen_button)
+        layout1.addWidget(setCharacterPos_button)
         layout2.addWidget(setLootScreen_button)
 
         # Add Layouts
@@ -173,8 +162,8 @@ class SettingsTab(QWidget):
         thread.daemon = True
         thread.start()
 
-    def setBP(self, index):
-        thread = Thread(target=self.setTools_Thread, args=(index,))
+    def setCoordinates(self, index):
+        thread = Thread(target=self.setCoordinates_Thread, args=(index,))
         thread.daemon = True
         thread.start()
 
@@ -200,16 +189,26 @@ class SettingsTab(QWidget):
                 screenWidth[index], screenHeight[index] = win32gui.ScreenToClient(game, (screenWidth[index], screenHeight[index]))
                 return
 
-    def setTools_Thread(self, index):
-        self.bp_label.setStyleSheet("color: red")
+    def setCoordinates_Thread(self, index):
+        if index == 0:
+            self.screen_label.setStyleSheet("color: red")
+        else:
+            self.tools_label.setStyleSheet("color: red")
         while True:
-            bpX[index], bpY[index] = win32api.GetCursorPos()
-            self.bp_label.setText(f"X = {bpX[index]} | Y = {bpY[index]}")
+            coordinatesX[index], coordinatesY[index] = win32api.GetCursorPos()
+            if index == 0:
+                self.screen_label.setText(f"X = {coordinatesX[index]} | Y = {coordinatesY[index]}")
+            else:
+                self.tools_label.setText(f"X = {coordinatesX[index]} | Y = {coordinatesY[index]}")
             time.sleep(0.05)
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
-                bpX[index], bpY[index] = win32gui.ScreenToClient(game, (bpX[index], bpY[index]))
-                self.bp_label.setText("Set")
-                self.bp_label.setStyleSheet("color: black")
+                coordinatesX[index], coordinatesY[index] = win32gui.ScreenToClient(game, (coordinatesX[index], coordinatesY[index]))
+                if index == 0:
+                    self.screen_label.setText("Set")
+                    self.screen_label.setStyleSheet("color: black")
+                else:
+                    self.tools_label.setText("Set")
+                    self.tools_label.setStyleSheet("color: black")
                 return
 
     def saveSettings(self) -> None:
@@ -219,12 +218,12 @@ class SettingsTab(QWidget):
                 return
         if settingsName:
             screen_data = {
-                "screenX": screenX,
-                "screenY": screenY,
-                "screenWidth": screenWidth,
-                "screenHeight": screenHeight,
-                "bpX": bpX,
-                "bpY": bpY
+                "screenX": screenX[0],
+                "screenY": screenY[0],
+                "screenWidth": screenWidth[0],
+                "screenHeight": screenHeight[0],
+                "bpX": coordinatesX,
+                "bpY": coordinatesY
             }
             settingsData = {
                 "screen_data": screen_data
@@ -240,17 +239,17 @@ class SettingsTab(QWidget):
             with open(f"Settings/{settingsName}.json", "r") as f:
                 settingsList = json.load(f)
             settingsData = settingsList.get("screen_data", {})
-            screenX[0], screenX[1] = settingsData.get("screenX", [0] * 2)
-            screenY[0], screenY[1] = settingsData.get("screenY", [0] * 2)
-            screenWidth[0], screenWidth[1] = settingsData.get("screenWidth", [0] * 2)
-            screenHeight[0], screenHeight[1] = settingsData.get("screenHeight", [0] * 2)
-            bpDataX = settingsData.get("bpX", [0] * 12)
-            bpDataY = settingsData.get("bpY", [0] * 12)
-            for i in range(len(bpX)):
-                bpX[i] = bpDataX[i]
-                bpY[i] = bpDataY[i]
-        self.bp_label.setStyleSheet("color: green")
+            screenX[0] = settingsData.get("screenX")
+            screenY[0] = settingsData.get("screenY")
+            screenWidth[0] = settingsData.get("screenWidth")
+            screenHeight[0] = settingsData.get("screenHeight")
+            bpDataX = settingsData.get("bpX", [0] * 11)
+            bpDataY = settingsData.get("bpY", [0] * 11)
+            for i in range(len(coordinatesX)):
+                coordinatesX[i] = bpDataX[i]
+                coordinatesY[i] = bpDataY[i]
+        self.tools_label.setStyleSheet("color: green")
         self.screen_label.setStyleSheet("color: green")
         self.screen_label.setText("Loaded")
-        self.bp_label.setText("Loaded")
+        self.tools_label.setText("Loaded")
 

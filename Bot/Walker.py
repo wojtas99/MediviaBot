@@ -1,3 +1,6 @@
+import json
+import time
+
 from Functions import *
 
 
@@ -80,6 +83,8 @@ class WalkerTab(QWidget):
         clearWaypointList_button = QPushButton("Clear", self)
         clearWaypointList_button.clicked.connect(self.clearWaypointList)
 
+        # Buttons Functions
+
         # List Widgets Functions
         self.waypoint_listWidget.currentItemChanged.connect(self.checkWaypoint)
 
@@ -113,7 +118,7 @@ class WalkerTab(QWidget):
         standWaypoint_button = QPushButton("Stand", self)
         ropeWaypoint_button = QPushButton("Rope", self)
         shovelWaypoint_button = QPushButton("Shovel", self)
-        pickWaypoint_button = QPushButton("Pick", self)
+        ladderWaypoint_button = QPushButton("Ladder", self)
         actionWaypoint_button = QPushButton("Action", self)
         labelWaypoint_button = QPushButton("Label", self)
 
@@ -121,12 +126,12 @@ class WalkerTab(QWidget):
         standWaypoint_button.clicked.connect(lambda: self.addWaypoint(0))
         ropeWaypoint_button.clicked.connect(lambda: self.addWaypoint(1))
         shovelWaypoint_button.clicked.connect(lambda: self.addWaypoint(2))
-        pickWaypoint_button.clicked.connect(lambda: self.addWaypoint(3))
+        ladderWaypoint_button.clicked.connect(lambda: self.addWaypoint(3))
         actionWaypoint_button.clicked.connect(lambda: self.addWaypoint(4))
         labelWaypoint_button.clicked.connect(lambda: self.addWaypoint(5))
 
         # Line Edits
-        self.actionWaypoint_textEdit.setFixedHeight(100)
+        self.actionWaypoint_textEdit.setFixedHeight(50)
 
         # QHBox
         layout1 = QHBoxLayout(self)
@@ -141,7 +146,7 @@ class WalkerTab(QWidget):
         layout2.addWidget(labelWaypoint_button)
         layout3.addWidget(ropeWaypoint_button)
         layout3.addWidget(shovelWaypoint_button)
-        layout3.addWidget(pickWaypoint_button)
+        layout3.addWidget(ladderWaypoint_button)
         layout4.addWidget(self.actionWaypoint_textEdit)
 
         # Add Layouts
@@ -161,6 +166,10 @@ class WalkerTab(QWidget):
         layout1 = QHBoxLayout(self)
         layout2 = QHBoxLayout(self)
 
+        # Check Boxes
+        self.startCaveBot_checkBox.stateChanged.connect(self.startWalker_thread)
+        self.recordCaveBot_checkBox.stateChanged.connect(self.startRecord_thread)
+
         # Add Widgets
         layout1.addWidget(self.startCaveBot_checkBox)
         layout2.addWidget(self.recordCaveBot_checkBox)
@@ -172,75 +181,111 @@ class WalkerTab(QWidget):
 
     # Save Waypoints To waypoint_listWidget
     def saveWaypointProfile(self) -> None:
-        profile_name = self.waypointProfile_lineEdit.text()
-        if profile_name:
-            f = open("Waypoints/"f"{profile_name}.txt", "w")
-            [f.write(f'{self.waypoint_listWidget.item(i).text()}\n') for i in range(self.waypoint_listWidget.count())]
-            f.close()
-            self.waypointProfile_listWidget.addItem(profile_name)
+        waypointName = self.waypointProfile_lineEdit.text()
+        for index in range(self.waypointProfile_listWidget.count()):
+            if waypointName.upper() == self.waypointProfile_listWidget.item(index).text().upper():
+                return
+        if waypointName:
+            waypointList = []
+            for i in range(self.waypoint_listWidget.count()):
+                item = self.waypoint_listWidget.item(i)
+                itemName = item.text()
+                itemData = item.data(Qt.UserRole)
+                waypointList.append({"name": itemName, "data": itemData})
+            with open(f"Waypoints/{waypointName}.json", "w") as f:
+                json.dump(waypointList, f, indent=4)
+            self.waypointProfile_listWidget.addItem(waypointName)
             self.waypointProfile_lineEdit.clear()
 
     # Load Waypoint Profile To waypoint_listWidget
     def loadWaypointProfile(self) -> None:
-        self.waypoint_listWidget.clear()
-        selected_item = self.waypointProfile_listWidget.currentItem().text()
-        if selected_item:
-            f = open(
-                "Waypoints/"f"{selected_item}.txt")
-            for waypoint in f:
-                if waypoint != '\n':
-                    self.waypoint_listWidget.addItem(waypoint.split("\n")[0])
-            f.close()
+        waypointName = self.waypointProfile_listWidget.currentItem().text()
+        if waypointName:
+            with open(f"Waypoints/{waypointName}.json", "r") as f:
+                waypointList = json.load(f)
+                self.waypoint_listWidget.clear()
+                for entry in waypointList:
+                    itemName = entry["name"]
+                    itemData = entry["data"]
+                    waypoint = QListWidgetItem(itemName)
+                    waypoint.setData(Qt.UserRole, itemData)
+                    self.waypoint_listWidget.addItem(waypoint)
 
     # Check Waypoints
     def checkWaypoint(self):
         waypoint = self.waypoint_listWidget.item(self.waypoint_listWidget.currentRow()).data(Qt.UserRole)
-        if waypoint:
-            self.actionWaypoint_textEdit.setText(waypoint['Action'])
+        if waypoint['Action'] > 3:
+            self.actionWaypoint_textEdit.setText(waypoint['Direction'])
         else:
             self.actionWaypoint_textEdit.clear()
 
     # Add Waypoints
     def addWaypoint(self, index):
         if index == 0:  # Stand
-            x = c.c_int.from_buffer(readMemory(myX, 0)).value
-            y = c.c_int.from_buffer(readMemory(myY, 0)).value
-            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
-            waypointDirection = self.waypointOption_comboBox.currentText()
-            self.waypoint_listWidget.addItem(f'Stand: {x} {y} {z}')
+            x = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            y = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+            waypointData = {"Action": 0,
+                            'Direction': self.waypointOption_comboBox.currentIndex(),
+                            'X': x, 'Y': y, 'Z': z}
+            waypoint = QListWidgetItem(f'Stand: {x} {y} {z}')
+            waypoint.setData(Qt.UserRole, waypointData)
+            self.waypoint_listWidget.addItem(waypoint)
         elif index == 1:  # Rope
-            x = c.c_int.from_buffer(readMemory(myX, 0)).value
-            y = c.c_int.from_buffer(readMemory(myY, 0)).value
-            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
-            waypointDirection = self.waypointOption_comboBox.currentText()
-            self.waypoint_listWidget.addItem(f'Rope: {x} {y} {z}')
+            x = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            y = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+            waypointData = {"Action": 1,
+                            'Direction': self.waypointOption_comboBox.currentIndex(),
+                            'X': x, 'Y': y, 'Z': z}
+            waypoint = QListWidgetItem(f'Rope: {x} {y} {z}')
+            waypoint.setData(Qt.UserRole, waypointData)
+            self.waypoint_listWidget.addItem(waypoint)
         elif index == 2:  # Shovel
-            x = c.c_int.from_buffer(readMemory(myX, 0)).value
-            y = c.c_int.from_buffer(readMemory(myY, 0)).value
-            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
-            waypointDirection = self.waypointOption_comboBox.currentText()
-            self.waypoint_listWidget.addItem(f'Shovel: {x} {y} {z}')
-        elif index == 3:  # Pick
-            x = c.c_int.from_buffer(readMemory(myX, 0)).value
-            y = c.c_int.from_buffer(readMemory(myY, 0)).value
-            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
-            waypointDirection = self.waypointOption_comboBox.currentText()
-            self.waypoint_listWidget.addItem(f'Pick: {x} {y} {z}')
+            x = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            y = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+            waypointData = {"Action": 2,
+                            'Direction': self.waypointOption_comboBox.currentIndex(),
+                            'X': x, 'Y': y, 'Z': z}
+            waypoint = QListWidgetItem(f'Shovel: {x} {y} {z}')
+            waypoint.setData(Qt.UserRole, waypointData)
+            self.waypoint_listWidget.addItem(waypoint)
+        elif index == 3:  # Ladder
+            x = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            y = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+            waypointData = {"Action": 3,
+                            'Direction': self.waypointOption_comboBox.currentIndex(),
+                            'X': x, 'Y': y, 'Z': z}
+            waypoint = QListWidgetItem(f'Ladder: {x} {y} {z}')
+            waypoint.setData(Qt.UserRole, waypointData)
+            self.waypoint_listWidget.addItem(waypoint)
         elif index == 4:  # Action
-            x = c.c_int.from_buffer(readMemory(myX, 0)).value
-            y = c.c_int.from_buffer(readMemory(myY, 0)).value
-            z = c.c_short.from_buffer(readMemory(myZ, 0)).value
+            x = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            y = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
             actionText = self.actionWaypoint_textEdit.document().toRawText()
             if actionText:
-                actionData = {"Action": actionText}
-                action = QListWidgetItem(f'Action: {x} {y} {z}')
-                action.setData(Qt.UserRole, actionData)
-                self.waypoint_listWidget.addItem(action)
+                waypointData = {"Action": 4,
+                                'Direction': actionText,
+                                'X': x, 'Y': y, 'Z': z}
+                waypoint = QListWidgetItem(f'Action: {x} {y} {z}')
+                waypoint.setData(Qt.UserRole, waypointData)
+                self.waypoint_listWidget.addItem(waypoint)
                 self.actionWaypoint_textEdit.clear()
         elif index == 5:  # Label
+            x = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            y = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            z = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
             labelName = self.actionWaypoint_textEdit.document().toRawText()
             if labelName:
-                self.waypoint_listWidget.addItem(labelName)
+                waypointData = {"Action": 5,
+                                'Direction': labelName,
+                                'X': x, 'Y': y, 'Z': z}
+                waypoint = QListWidgetItem(f'{labelName}')
+                waypoint.setData(Qt.UserRole, waypointData)
+                self.waypoint_listWidget.addItem(waypoint)
                 self.actionWaypoint_textEdit.clear()
 
     # Delete Selected Waypoint from waypoint_listWidget
@@ -260,40 +305,63 @@ class WalkerTab(QWidget):
 
     # Thread that record our waypoints
     def recordWaypoints(self) -> None:
-        x = readMemory(myX, 0)
-        y = readMemory(myY, 0)
-        z = readMemory(myZ, 0)
-        x = c.c_int.from_buffer(x).value
-        y = c.c_int.from_buffer(y).value
-        z = c.c_int.from_buffer(z).value
-        self.waypoint_listWidget.addItem('I-X:'f'{x} Y:'f'{y} Z:'f'{z}')
-        new_x = x
-        new_y = y
-        new_z = z
+        myX = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+        myY = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+        myZ = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+        waypointData = {"Action": 0,
+                        'Direction': 0,
+                        'X': myX, 'Y': myY, 'Z': myZ}
+        waypoint = QListWidgetItem(f'Stand: {myX} {myY} {myZ}')
+        waypoint.setData(Qt.UserRole, waypointData)
+        self.waypoint_listWidget.addItem(waypoint)
+        oldX = myX
+        oldY = myY
+        oldZ = myZ
         while self.recordCaveBot_checkBox.checkState():
-            x = readMemory(myX, 0)
-            y = readMemory(myY, 0)
-            z = readMemory(myZ, 0)
-            x = c.c_int.from_buffer(x).value
-            y = c.c_int.from_buffer(y).value
-            z = c.c_int.from_buffer(z).value
-            if (x != new_x or y != new_y) and z == new_z:
-                self.waypoint_listWidget.addItem('I-X:'f'{x} Y:'f'{y} Z:'f'{z}')
-            if z != new_z:
-                if y > new_y and x == new_x:
-                    self.waypoint_listWidget.addItem('S-X:'f'{x} Y:'f'{y} Z:'f'{z}')
-                if y <= new_y and x == new_x:
-                    self.waypoint_listWidget.addItem('N-X:'f'{x} Y:'f'{y} Z:'f'{z}')
-                if x > new_x:
-                    self.waypoint_listWidget.addItem('E-X:'f'{x} Y:'f'{y} Z:'f'{z}')
-                if x < new_x:
-                    self.waypoint_listWidget.addItem('W-X:'f'{x} Y:'f'{y} Z:'f'{z}')
-            new_x = x
-            new_y = y
-            new_z = z
-            time.sleep(0.2)
+            myX = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            myY = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            myZ = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+            if (myX != oldX or myY != oldY) and myZ == oldZ:
+                waypointData = {"Action": 0,
+                                'Direction': 0,
+                                'X': myX, 'Y': myY, 'Z': myZ}
+                waypoint = QListWidgetItem(f'Stand: {myX} {myY} {myZ}')
+                waypoint.setData(Qt.UserRole, waypointData)
+                self.waypoint_listWidget.addItem(waypoint)
+            if myZ != oldZ:
+                if myX < oldX:
+                    waypointData = {"Action": 0,
+                                    'Direction': 4,
+                                    'X': myX, 'Y': myY, 'Z': myZ}
+                    waypoint = QListWidgetItem(f'Stand: {myX} {myY} {myZ}')
+                    waypoint.setData(Qt.UserRole, waypointData)
+                    self.waypoint_listWidget.addItem(waypoint)
+                elif myX > oldX:
+                    waypointData = {"Action": 0,
+                                    'Direction': 3,
+                                    'X': myX, 'Y': myY, 'Z': myZ}
+                    waypoint = QListWidgetItem(f'Stand: {myX} {myY} {myZ}')
+                    waypoint.setData(Qt.UserRole, waypointData)
+                    self.waypoint_listWidget.addItem(waypoint)
+                elif myY > oldY:
+                    waypointData = {"Action": 0,
+                                    'Direction': 2,
+                                    'X': myX, 'Y': myY, 'Z': myZ}
+                    waypoint = QListWidgetItem(f'Stand: {myX} {myY} {myZ}')
+                    waypoint.setData(Qt.UserRole, waypointData)
+                    self.waypoint_listWidget.addItem(waypoint)
+                else:
+                    waypointData = {"Action": 0,
+                                    'Direction': 1,
+                                    'X': myX, 'Y': myY, 'Z': myZ}
+                    waypoint = QListWidgetItem(f'Stand: {myX} {myY} {myZ}')
+                    waypoint.setData(Qt.UserRole, waypointData)
+                    self.waypoint_listWidget.addItem(waypoint)
+            oldX = myX
+            oldY = myY
+            oldZ = myZ
+            time.sleep(0.1)
 
-        # Starts thread that record waypoints
     def startWalker_thread(self) -> None:
         thread = Thread(target=self.followWaypoints)
         thread.daemon = True  # Daemonize the thread to terminate it when the main thread exits
@@ -301,50 +369,38 @@ class WalkerTab(QWidget):
             thread.start()
 
     def followWaypoints(self) -> None:
+        currentWpt = self.waypoint_listWidget.currentRow()
+        if currentWpt == -1:
+            currentWpt = 0
         timer = 0
-        i = 0 if self.waypoint_listWidget.currentRow() == -1 else self.waypoint_listWidget.currentRow()
-        while i < self.waypoint_listWidget.count() and self.startCaveBot_checkBox.checkState():
-            status = self.waypoint_listWidget.item(i).text().split("-")[0]
-            numbers = re.sub(r'\D', ' ', self.waypoint_listWidget.item(i).text())
-            wpt = [num for num in numbers.split(' ') if num]
-            self.waypoint_listWidget.setCurrentRow(i)
-            targetID = readMemory(attack, 0)
-            targetID = c.c_ulonglong.from_buffer(targetID).value
-            while targetID != 0:
-                targetID = readMemory(attack, 0)
-                targetID = c.c_ulonglong.from_buffer(targetID).value
-                time.sleep(2)
-            x = readMemory(myX, 0)
-            y = readMemory(myY, 0)
-            z = readMemory(myZ, 0)
-            x = c.c_int.from_buffer(x).value
-            y = c.c_int.from_buffer(y).value
-            z = c.c_short.from_buffer(z).value
-            if x == int(wpt[0]) and y == int(wpt[1]) and z == int(wpt[2]):
+        while self.startCaveBot_checkBox.checkState():
+            self.waypoint_listWidget.setCurrentRow(currentWpt)
+            wptData = self.waypoint_listWidget.item(currentWpt).data(Qt.UserRole)
+            wptAction = wptData['Action']
+            wptDirection = wptData['Direction']
+            mapX = wptData['X']
+            mapY = wptData['Y']
+            mapZ = wptData['Z']
+            myX = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+            myY = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+            myZ = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+            if myX == mapX and myY == mapY and myZ == mapZ and wptAction == 0:
                 timer = 0
-                i += 1
-                if i == self.waypoint_listWidget.count() - 1:
-                    i = 0
+                currentWpt += 1
+                if currentWpt == self.waypoint_listWidget.count():
+                    currentWpt = 0
+                time.sleep(0.1)
                 continue
-            if 5 <= timer <= 10:
-                leftClick(875 + (int(wpt[0]) - x) * 70, 475 + (int(wpt[1]) - y) * 70)
-                timer += 2
-                time.sleep(2)
-                continue
-            if 10 <= timer:
-                i += 1
-                if i == self.waypoint_listWidget.count() - 1:
-                    i = 0
-                continue
-            if status == 'I':
-                stand(wpt[0], wpt[1], wpt[2], x, y, z)
-            if status == 'N':
-                walkNorth(wpt[0], wpt[1], wpt[2], x, y, z)
-            if status == 'S':
-                walkSouth(wpt[0], wpt[1], wpt[2], x, y, z)
-            if status == 'E':
-                walkEast(wpt[0], wpt[1], wpt[2], x, y, z)
-            if status == 'W':
-                walkWest(wpt[0], wpt[1], wpt[2], x, y, z)
+            if not lock.locked():
+                if wptAction == 0:
+                    walk(wptDirection, myX, myY, myZ, mapX, mapY, mapZ)
+                elif wptAction == 3:
+                    time.sleep(0.5)
+                    rightClick(coordinatesX[0], coordinatesY[0])  # Click On Ladder
+                    currentWpt += 1
             time.sleep(0.1)
-            timer += 0.1
+            if not lock.locked():
+                timer += 0.1
+            if timer > 5:
+                leftClick(coordinatesX[0] + (mapX - myX) * 75, coordinatesY[0] + (mapY - myY) * 75)
+                time.sleep(5)

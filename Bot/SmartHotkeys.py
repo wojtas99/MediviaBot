@@ -91,13 +91,14 @@ class SmartHotkeysTab(QWidget):
                         if targetID:
                             targetY = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0x3C)).value
                             targetX = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0x38)).value
-                            x = targetX - c.c_int.from_buffer(readMemory(myX, 0)).value
-                            y = targetY - c.c_int.from_buffer(readMemory(myY, 0)).value
+                            x = targetX - c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+                            y = targetY - c.c_int.from_buffer(readMemory(myYAddress, 0)).value
                             x = x * 75
                             y = y * 75
-                            leftClick(x, y)
+                            leftClick(x + coordinatesX[0], y + coordinatesY[0])
                     else:
                         rightClick(hotkey['X'], hotkey['Y'])
+                        leftClick(coordinatesX[0], coordinatesY[0])
             time.sleep(0.05)
 
 

@@ -15,13 +15,15 @@ import time
 import requests
 from win32con import VK_LBUTTON
 
-
+# Keystrokes codes
+lParam = [0X00480001, 0x00500001, 0X004D0001, 0X004B0001,  # 8, 2, 6, 4
+          0X00490001, 0X00470001, 0X00510001, 0X004F0001]  # 9, 7, 3, 1
 
 
 # Static addresses
-myX = 0xBED9A0
-myY = 0xBED9A4
-myZ = 0xBED9A8
+myXAddress = 0xBED9A0
+myYAddress = 0xBED9A4
+myZAddress = 0xBED9A8
 myName = 0xBEC870
 attack = 0xBEC920
 
@@ -32,22 +34,23 @@ myHPMAXOffset = [0x560]
 myMPOffset = [0x590]
 myMPMAXOffset = [0x598]
 
-monstersOnScreenPtr = 0x00C72C50
-monstersOnScreenOffset = [0xC80, 0X338, 0X138, 0XFE0, 0X764]
+monstersOnScreenPtr = 0x00BECA58
+monstersOnScreenOffset = [0x858, 0xE0, 0XF68, 0X4F8, 0XE64]
 
 containerPtr = 0x00C6FDD0
 containerOffset = [0XE8, 0X2B0, 0X0, 0X1D8, 0XEA8]
 
 # Global variables
-screenX = [0] * 2
-screenY = [0] * 2
-screenWidth = [0] * 2
-screenHeight = [0] * 2
-bpX = [0] * 12
-bpY = [0] * 12
+screenX = [0] * 1
+screenY = [0] * 1
+screenWidth = [0] * 1
+screenHeight = [0] * 1
+coordinatesX = [0] * 11
+coordinatesY = [0] * 11
 
 game = win32gui.FindWindow(None, 'Medivia')
 lock = threading.Lock()
+testy = threading.Lock()
 procID = win32process.GetWindowThreadProcessId(game)
 procID = procID[1]
 processHandle = c.windll.kernel32.OpenProcess(0x1F0FFF, False, procID)
@@ -106,66 +109,44 @@ def mergeClosePoints(points, distance_threshold):
     return merged_points
 
 
-def stand(monster_x, monster_y, monster_z, x, y, z):
-    myx = int(monster_x) - x
-    myy = int(monster_y) - y
-    myz = int(monster_z) - z
-    if myy == -1 and myx == 0 and myz == 0:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
-        return
-    if myy == 1 and myx == 0 and myz == 0:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
-        return
-    if myx == -1 and myy == 0 and myz == 0:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
-        return
-    if myx == 1 and myy == 0 and myz == 0:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
-        return
-
-
-def walkNorth(monster_x, monster_y, monster_z, x, y, z):
-    myx = int(monster_x) - x
-    myy = int(monster_y) - y
-    myz = int(monster_z) - z
-    if ((myy == -1 or myy == -2) or (myy == 0 and myx == 0)) and abs(myz) <= 1:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_UP, 0x01480001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_UP, 0x01480001)
-        return
-
-
-def walkSouth(monster_x, monster_y, monster_z, x, y, z):
-    myx = int(monster_x) - x
-    myy = int(monster_y) - y
-    myz = int(monster_z) - z
-    if (myy == 1 or myy == 2) and abs(myz) <= 1:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_DOWN, 0x01500001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_DOWN, 0x01500001)
-        return
-
-
-def walkWest(monster_x, monster_y, monster_z, x, y, z):
-    myx = int(monster_x) - x
-    myy = int(monster_y) - y
-    myz = int(monster_z) - z
-    if (myx == -1 or myx == -2) and abs(myz) <= 1:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_LEFT, 0x014B0001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_LEFT, 0x014B0001)
-        return
-
-
-def walkEast(monster_x, monster_y, monster_z, x, y, z):
-    myx = int(monster_x) - x
-    myy = int(monster_y) - y
-    myz = int(monster_z) - z
-    if (myx == 1 or myx == 2) and abs(myz) <= 1:
-        win32gui.SendMessage(game, win32con.WM_KEYDOWN, win32con.VK_RIGHT, 0x014D0001)
-        win32gui.SendMessage(game, win32con.WM_KEYUP, win32con.VK_RIGHT, 0x014D0001)
-        return
+def walk(wptDirection, myX, myY, myZ, mapX, mapY, mapZ) -> None:
+    x = mapX - myX
+    y = mapY - myY
+    z = mapZ - myZ
+    if wptDirection != 0:
+        if wptDirection == 1 and ((-2 <= y < 0) or (y == 0 == x)) and abs(z) <= 1:  # Walk North
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[0])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[0])
+            return
+        if wptDirection == 2 and 0 < y <= 2 and abs(z) <= 1:  # Walk South
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[1])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[1])
+            return
+        if wptDirection == 3 and 0 < x <= 2 and abs(z) <= 1:  # Walk East
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[2])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[2])
+            return
+        if wptDirection == 4 and -2 <= x < 0 and abs(z) <= 1:  # Walk West
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[3])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[3])
+            return
+    else:
+        if x == 1 and y == 0 and z == 0:  # Walk East
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[2])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[2])
+            return
+        if x == -1 and y == 0 and z == 0:  # Walk West
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[3])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[3])
+            return
+        if x == 0 and y == 1 and z == 0:  # Walk South
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[1])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[1])
+            return
+        if x == 0 and y == -1 and z == 0:  # Walk North
+            win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, lParam[0])
+            win32gui.PostMessage(game, win32con.WM_KEYUP, 0, lParam[0])
+            return
 
 
 def collectItem(loot_x, loot_y, bp_x, bp_y):
@@ -205,9 +186,9 @@ def useOnMe(x, y):
     win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_RBUTTONDOWN, 2, win32api.MAKELONG(x, y))
     win32gui.PostMessage(game, win32con.WM_RBUTTONUP, 0, win32api.MAKELONG(x, y))
-    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(845, 460))
-    win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(845, 460))
-    win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(845, 460))
+    win32gui.PostMessage(game, win32con.WM_MOUSEMOVE, 0, win32api.MAKELONG(coordinatesX[0], coordinatesY[0]))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONDOWN, 1, win32api.MAKELONG(coordinatesX[0], coordinatesY[0]))
+    win32gui.PostMessage(game, win32con.WM_LBUTTONUP, 0, win32api.MAKELONG(coordinatesX[0], coordinatesY[0]))
     return
 
 

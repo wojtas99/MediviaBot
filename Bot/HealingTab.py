@@ -146,7 +146,6 @@ class HealingTab(QWidget):
     def checkStartState(self) -> None:
         thread = Thread(target=self.startHealing_Thread)
         thread.daemon = True
-        thread.start()
         if self.startHealing_checkBox.checkState() == 2:
             thread.start()
 
@@ -166,74 +165,34 @@ class HealingTab(QWidget):
                 if healType[0:2] == "HP":
                     if healOption == "UH":
                         if '%' in healType:
-                            lock_acquired = False
-                            try:
-                                while healAbove <= (myHp * 100 / myMaxHp) < healBelow:
-                                    if not lock_acquired:
-                                        lock.acquire()
-                                        lock_acquired = True
-                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
-                                    useOnMe(bpX[4], bpY[4])
-                                    time.sleep(0.5)
-                            finally:
-                                if lock_acquired:
-                                    lock.release()
+                            while healAbove <= (myHp * 100 / myMaxHp) < healBelow:
+                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                useOnMe(coordinatesX[5], coordinatesY[5])
+                                time.sleep(0.5)
                         else:
-                            lock_acquired = False
-                            try:
-                                while healAbove <= myHp < healBelow:
-                                    if not lock_acquired:
-                                        lock.acquire()
-                                        lock_acquired = True
-                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
-                                    useOnMe(bpX[4], bpY[4])
-                                    time.sleep(0.5)
-                            finally:
-                                if lock_acquired:
-                                    lock.release()
+                            while healAbove <= myHp < healBelow:
+                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                useOnMe(coordinatesX[5], coordinatesY[5])
+                                time.sleep(0.5)
                     else:
                         if '%' in healType:
-                            lock_acquired = False
-                            try:
-                                while healAbove <= (myHp * 100 / myMaxHp) < healBelow and myMp >= healMinMP:
-                                    if not lock_acquired:
-                                        lock.acquire()
-                                        lock_acquired = True
-                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
-                                    myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
-                                    pressHotkey(int(healOption[1:]))
-                                    time.sleep(0.5)
-                            finally:
-                                if lock_acquired:
-                                    lock.release()
+                            while healAbove <= (myHp * 100 / myMaxHp) < healBelow and myMp >= healMinMP:
+                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                                pressHotkey(int(healOption[1:]))
+                                time.sleep(0.5)
                         else:
-                            lock_acquired = False
-                            try:
-                                while healAbove <= myHp < healBelow and myMp >= healMinMP:
-                                    if not lock_acquired:
-                                        lock.acquire()
-                                        lock_acquired = True
-                                    myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
-                                    myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
-                                    pressHotkey(int(healOption[1:]))
-                                    time.sleep(0.5)
-                            finally:
-                                if lock_acquired:
-                                    lock.release()
+                            while healAbove <= myHp < healBelow and myMp >= healMinMP:
+                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
+                                myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                                pressHotkey(int(healOption[1:]))
+                                time.sleep(0.5)
                 else:
                     if '%' in healType:
-                        lock_acquired = False
-                        try:
-                            while healAbove <= (myMp * 100 / myMaxMp) < healBelow:
-                                if not lock_acquired:
-                                    lock.acquire()
-                                    lock_acquired = True
-                                myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
-                                useOnMe(bpX[4], bpY[4])
-                                time.sleep(0.5)
-                        finally:
-                            if lock_acquired:
-                                lock.release()
+                        while healAbove <= (myMp * 100 / myMaxMp) < healBelow:
+                            myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                            useOnMe(coordinatesX[5], coordinatesY[5])
+                            time.sleep(0.5)
 
 
 
