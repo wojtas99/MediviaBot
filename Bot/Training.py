@@ -1,4 +1,5 @@
 import random
+import time
 
 from Functions import *
 
@@ -6,259 +7,197 @@ from Functions import *
 class TrainingTab(QWidget):
     def __init__(self):
         super().__init__()
+        # Load Icon
+        self.setWindowIcon(QIcon('Icon.jpg'))
+
+        # Set Title and Size
+        self.setWindowTitle("Training")
+        self.setFixedSize(300, 200)
         # Variables
-        self.setBait_button = None
-        self.setFood_button = None
-        self.setWater_button = None
-        self.setFishingRod_button = None
-        self.startFishing_checkBox = None
-        self.antyIdle_checkBox = None
+        # Check Boxes
+        self.burnMana_checkBox = QCheckBox("Burn Mana", self)
+        self.startFishing_checkBox = QCheckBox("Start Fishing", self)
+        self.startEat_checkBox = QCheckBox("Eat Food", self)
+
+        # Combo Boxes
+        self.hotkeyList_comboBox = QComboBox(self)
+
+        # Line Edits
+        self.mp_lineEdit = QLineEdit(self)
+
+        # List Widgets
+        self.burnMana_listWidget = QListWidget(self)
+
+        # Buttons
+        self.fishingRod_button = QPushButton("FishingRod", self)
+        self.water_button = QPushButton("Water", self)
+        self.addFood_button = QPushButton("Food", self)
+
+        # Other Variables
         self.foodX = 0
         self.foodY = 0
         self.waterX = 0
         self.waterY = 0
         self.fishingRodX = 0
         self.fishingRodY = 0
-        self.baitX = 0
-        self.baitY = 0
-        self.bait = 0
-        self.hotkeyList_comboBox = None
-        self.manaPoints_line = None
-        self.startEat_checkBox = None
-        self.startSkill_checkBox = None
-        self.burnMana_listWidget = None
 
+        # Layouts
         self.layout = QGridLayout()
         self.setLayout(self.layout)
-        # Functions
-        self.groupbox1()
-        self.groupbox2()
-        self.groupbox3()
 
-    def groupbox1(self) -> None:
-        groupbox = QGroupBox("Burn Mana List")
-        groupbox_layout = QVBoxLayout()
+        # Initialize
+        self.burnManaList()
+        self.addHotkeys()
+        self.fishing()
+        self.eatFood()
+
+    def burnManaList(self) -> None:
+        groupbox = QGroupBox("Burn Mana")
+        groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
-
-        # List Widgets
-        self.burnMana_listWidget = QListWidget(self)
 
         # Add Layouts
         groupbox_layout.addWidget(self.burnMana_listWidget)
-        self.layout.addWidget(groupbox, 0, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
-        groupbox.setFixedSize(150, 150)
+        self.layout.addWidget(groupbox, 0, 0, 1, 1)
 
-    def groupbox2(self) -> None:
-        groupbox = QGroupBox("Set Hotkey")
-        groupbox_layout = QVBoxLayout()
+    def addHotkeys(self) -> None:
+        groupbox = QGroupBox("Hotkeys")
+        groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
         # Buttons
         addHotkey_button = QPushButton("Add", self)
+
+        # Buttons Functions
         addHotkey_button.clicked.connect(self.addHotkey)
 
-        self.setFood_button = QPushButton("Select Food", self)
-        self.setFood_button.clicked.connect(self.setFood_thread)
-
         # Check Boxes
-        self.startSkill_checkBox = QCheckBox(self)
-        self.startSkill_checkBox.setFixedWidth(15)
-        self.startSkill_checkBox.stateChanged.connect(self.startSkill_thread)
-        self.antyIdle_checkBox = QCheckBox(self)
-        self.antyIdle_checkBox.setFixedWidth(15)
+        self.burnMana_checkBox.stateChanged.connect(self.startSkill)
 
         # Combo Boxes
-        self.hotkeyList_comboBox = QComboBox(self)
-        for i in range(1, 13):
+        for i in range(1, 11):
             self.hotkeyList_comboBox.addItem("F" + f'{i}')
 
-        # Labels
-        manaList_label = QLabel("MP:", self)
-        startSkill_label = QLabel("Start Skill", self)
-        antyIdle_label = QLabel("Anty Idle", self)
-
-        # Edit Lines
-        self.manaPoints_line = QLineEdit()
-
         # QHBox
-        layout1 = QHBoxLayout()
-        layout1.addWidget(manaList_label)
-        layout1.addWidget(self.manaPoints_line)
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout(self)
+
+        # Add Widgets
+        layout1.addWidget(self.mp_lineEdit)
         layout1.addWidget(self.hotkeyList_comboBox)
         layout1.addWidget(addHotkey_button)
-        layout2 = QHBoxLayout()
-        layout2.addWidget(self.startSkill_checkBox)
-        layout2.addWidget(startSkill_label)
-        layout2.addWidget(self.setFood_button)
-        layout3 = QHBoxLayout()
-        layout3.addWidget(self.antyIdle_checkBox)
-        layout3.addWidget(antyIdle_label)
+        layout2.addWidget(self.burnMana_checkBox)
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox_layout.addLayout(layout3)
-        groupbox.setFixedSize(240, 180)
-        self.layout.addWidget(groupbox, 0, 1, alignment=Qt.AlignTop | Qt.AlignLeft)
+        self.layout.addWidget(groupbox, 0, 1)
 
-    def groupbox3(self) -> None:
+    def fishing(self) -> None:
         groupbox = QGroupBox("Fishing")
-        groupbox_layout = QVBoxLayout()
+        groupbox_layout = QVBoxLayout(self)
         groupbox.setLayout(groupbox_layout)
 
-        # Buttons
-        self.setFishingRod_button = QPushButton("Select FishingRod", self)
-        self.setFishingRod_button.clicked.connect(self.setFishingRod_thread)
-
-        self.setWater_button = QPushButton("Select Water", self)
-        self.setWater_button.clicked.connect(self.setWater_thread)
-
-
+        # Buttons Functions
+        self.fishingRod_button.clicked.connect(lambda: self.setCoordinates(0))
+        self.water_button.clicked.connect(lambda: self.setCoordinates(1))
         # Check Boxes
-        self.startFishing_checkBox = QCheckBox(self)
-        self.startFishing_checkBox.setFixedWidth(15)
-        self.startFishing_checkBox.stateChanged.connect(self.startFishing_thread)
-
-        # Labels
-        startFishing_label = QLabel("Start Fishing", self)
 
         # QHBox
-        layout1 = QHBoxLayout()
-        layout1.addWidget(self.setFishingRod_button)
-        layout2 = QHBoxLayout()
-        layout2.addWidget(self.setWater_button)
-        layout4 = QHBoxLayout()
-        layout4.addWidget(self.startFishing_checkBox)
-        layout4.addWidget(startFishing_label)
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout(self)
+
+        # Add Widgets
+        layout1.addWidget(self.fishingRod_button)
+        layout1.addWidget(self.water_button)
+        layout2.addWidget(self.startFishing_checkBox)
 
         # Add Layouts
         groupbox_layout.addLayout(layout1)
         groupbox_layout.addLayout(layout2)
-        groupbox_layout.addLayout(layout4)
-        self.layout.addWidget(groupbox, 1, 0, alignment=Qt.AlignTop | Qt.AlignLeft)
+        self.layout.addWidget(groupbox, 1, 1)
+
+    def eatFood(self) -> None:
+        groupbox = QGroupBox("Food")
+        groupbox_layout = QVBoxLayout(self)
+        groupbox.setLayout(groupbox_layout)
+
+        # Buttons Functions
+        self.addFood_button.clicked.connect(lambda: self.setCoordinates(2))
+
+        # QHBox
+        layout1 = QHBoxLayout(self)
+        layout2 = QHBoxLayout(self)
+
+        # Add Widgets
+        layout1.addWidget(self.addFood_button)
+        layout2.addWidget(self.startEat_checkBox)
+
+        # Add Layouts
+        groupbox_layout.addLayout(layout1)
+        groupbox_layout.addLayout(layout2)
+        self.layout.addWidget(groupbox, 1, 0)
 
     def addHotkey(self) -> None:
-        hotkey = self.hotkeyList_comboBox.currentText()
-        self.burnMana_listWidget.addItem('Mana=' + f'{self.manaPoints_line.text()}' + ' hotkey:' + hotkey)
+        hotkeyName = self.hotkeyList_comboBox.currentText()
+        hotkeyData = {"Mana": int(self.mp_lineEdit.text())}
+        hotkey = QListWidgetItem(hotkeyName)
+        hotkey.setData(Qt.UserRole, hotkeyData)
+        self.burnMana_listWidget.addItem(hotkey)
+        self.mp_lineEdit.clear()
 
-    def setFood_thread(self) -> None:
-        thread = Thread(target=self.setFood)
+    def setCoordinates(self, index):
+        thread = Thread(target=self.setCoordinates_Thread, args=(index,))
         thread.daemon = True
         thread.start()
-        return
 
-    def setFood(self) -> None:
+    def setCoordinates_Thread(self, index) -> None:
         while True:
             x, y = win32api.GetCursorPos()
-            self.setFood_button.setText(str(x)+"| "+str(y))
+            if index == 0:
+                self.fishingRod_button.setText(f"{x, y}")
+            elif index == 1:
+                self.water_button.setText(f"{x, y}")
+            else:
+                self.addFood_button.setText(f"{x, y}")
+            time.sleep(0.05)
             if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
                 x, y = win32gui.ScreenToClient(game, (x, y))
-                self.foodX = x
-                self.foodY = y
-                self.setFood_button.setStyleSheet("color: green")
+                if index == 0:
+                    self.fishingRod_button.setText("FishingRod")
+                    self.fishingRodX = x
+                    self.fishingRodY = y
+                elif index == 1:
+                    self.water_button.setText("Water")
+                    self.waterX = x
+                    self.waterY = y
+                else:
+                    self.addFood_button.setText("Food")
+                    self.foodX = x
+                    self.foodY = y
                 return
-
-    def startSkill_thread(self) -> None:
-        thread = Thread(target=self.startSkill)
-        thread.daemon = True
-        if self.startSkill_checkBox.checkState() == 2:
-            thread.start()
 
     def startSkill(self) -> None:
-        timer = 0
-        while self.startFishing_checkBox.checkState() == 2 and self.startSkill_checkBox.checkState() == 0 and self.waterX != 0 and self.fishingRodX != 0 and self.baitX != 0:
-            if self.bait == 0:
-                rightClick(self.baitX, self.baitY)
-                leftClick(self.waterX, self.waterY)
-                time.sleep(random.uniform(1.0, 1.1))
-            rightClick(self.fishingRodX, self.fishingRodY)
-            leftClick(self.waterX, self.waterY)
-            self.bait += 1
-            time.sleep(random.uniform(1.0, 1.1))
-            if self.bait >= 1010:
-                self.bait = 0
-        while self.startSkill_checkBox.checkState() == 2:
+        thread = Thread(target=self.startSkill_Thread)
+        thread.daemon = True
+        if self.burnMana_checkBox.checkState() == 2:
+            thread.start()
+
+    def startSkill_Thread(self) -> None:
+        timer = 0.0
+        while self.burnMana_checkBox.checkState():
             for index in range(self.burnMana_listWidget.count()):
-                item = self.burnMana_listWidget.item(index)
-                item = item.text()
-                mana = item.split('h')[0]
-                mana = mana[5:]
-                mana = float(mana)
-                hotkey = item.split(':')[1]
-                myMana = readPointer(myStatsPtr, myMPOffset)
-                myMana = c.c_double.from_buffer(myMana).value
-                if len(hotkey) <= 3:
-                    hotkey = hotkey[1:]
-                    hotkey = int(hotkey)
-                    if myMana >= mana:
-                        pressHotkey(hotkey)
-                        time.sleep(0.3)
-                time.sleep(0.5)
-                timer += 0.5
-                if timer >= 60:
-                    timer = 0
-                    if self.foodX != 0:
-                        for _ in range(5):
-                            rightClick(self.foodX, self.foodY)
-                            time.sleep(0.1)
-                    if self.antyIdle_checkBox.checkState() == 2:
-                        antyIdle()
-                    time.sleep(0.2)
+                myMana = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
+                hotkeyData = self.burnMana_listWidget.item(index).data(Qt.UserRole)
+                hotkeyMana = hotkeyData['Mana']
+                if myMana >= hotkeyMana:
+                    pressHotkey(int(self.burnMana_listWidget.item(index).text()[1:]))
+                    time.sleep(0.5)
+                    timer += 0.5
+            time.sleep(1)
+            timer += 1
+            if timer > 60:
+                timer = 0
+                antyIdle()
 
-    def setFishingRod_thread(self) -> None:
-        thread = Thread(target=self.setFishingRod)
-        thread.daemon = True
-        thread.start()
-        return
-
-    def setFishingRod(self) -> None:
-        while True:
-            x, y = win32api.GetCursorPos()
-            self.setFishingRod_button.setText("Fishing Rod: " + str(x) + " | " + str(y))
-            time.sleep(0.05)
-            if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
-                x, y = win32gui.ScreenToClient(game, (x, y))
-                self.fishingRodX = x
-                self.fishingRodY = y
-                return
-
-    def setWater_thread(self) -> None:
-        thread = Thread(target=self.setWater)
-        thread.daemon = True
-        thread.start()
-        return
-
-    def setWater(self) -> None:
-        while True:
-            x, y = win32api.GetCursorPos()
-            self.setWater_button.setText(str(x)+"| "+str(y))
-            time.sleep(0.05)
-            if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
-                x, y = win32gui.ScreenToClient(game, (x, y))
-                self.waterX = x
-                self.waterY = y
-                return
-
-    def setBait_thread(self) -> None:
-        thread = Thread(target=self.setBait)
-        thread.daemon = True
-        thread.start()
-        return
-
-    def setBait(self) -> None:
-        while True:
-            x, y = win32api.GetCursorPos()
-            self.setBait_button.setText(str(x)+"| "+str(y))
-            time.sleep(0.05)
-            if win32api.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
-                x, y = win32gui.ScreenToClient(game, (x, y))
-                self.baitX = x
-                self.baitY = y
-                return
-
-    def startFishing_thread(self) -> None:
-        thread = Thread(target=self.startSkill)
-        thread.daemon = True
-        thread.start()
-        return
 

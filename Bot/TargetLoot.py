@@ -345,31 +345,6 @@ class TargetLootTab(QWidget):
 
     # Target monsters
     def startTargetLoot_Thread(self) -> None:
-        '''while self.startTarget_checkBox.checkState() and self.startLoot_checkBox.checkState():
-            for itemIndex in range(self.lootList_listWidget.count()):
-                for _ in range(3):
-                    itemName = self.lootList_listWidget.item(itemIndex).text()
-                    itemData = self.lootList_listWidget.item(itemIndex).data(Qt.UserRole)
-                    lootContainer = itemData['Loot']
-                    file_name = [x for x in os.listdir('ItemImages/') if x.split('.')[0] == itemName]
-                    if file_name:
-                        captureScreen = WindowCapture('Medivia', screenWidth[0] - screenX[0],
-                                                      screenHeight[0] - screenY[0], screenX[0], screenY[0])
-                        screenshot = captureScreen.get_screenshot()
-                        for itemName in os.listdir('ItemImages/' + file_name[0]):
-                            loadedImage = cv.imread('ItemImages/'f'{file_name[0]}''/' + itemName)
-                            result = cv.matchTemplate(screenshot, loadedImage, cv.TM_CCOEFF_NORMED)
-                            locations = list(zip(*(np.where(result >= 0.70))[::-1]))
-                            locations = mergeClosePoints(locations, 15)
-                            locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
-                            locations = [[int(x), int(y)] for x, y in locations]
-                            print(screenX[0], screenY[0])
-                            print(itemName)
-                            print(locations)
-                            for x, y in locations:
-                                collectItem(x + screenX[0], y + screenY[0], coordinatesX[lootContainer],
-                                            coordinatesY[lootContainer])
-                                time.sleep(0.25)'''
         while self.startTarget_checkBox.checkState():
             targetCount = c.c_int.from_buffer(readPointer(monstersOnScreenPtr, monstersOnScreenOffset)).value / 25 - 1
             for _ in range(int(targetCount)):
@@ -436,7 +411,7 @@ class TargetLootTab(QWidget):
                                 file_name = [x for x in os.listdir('ItemImages/') if x.split('.')[0] == itemName]
                                 if file_name:
                                     time.sleep(0.1)
-                                    captureScreen = WindowCapture('Medivia', screenWidth[0] - screenX[0],
+                                    captureScreen = WindowCapture("Medivia - " + nickname, screenWidth[0] - screenX[0],
                                                                   screenHeight[0] - screenY[0], screenX[0],
                                                                   screenY[0])
                                     if '.png' in file_name[0]:

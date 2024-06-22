@@ -84,7 +84,7 @@ def readPointer(address, extra_offset):
 nickname = readMemory(myName, 0)
 nickname = nickname.value
 nickname = nickname.decode('utf-8')
-#win32gui.SetWindowText(game, "Medivia - " + nickname)
+win32gui.SetWindowText(game, "Medivia - " + nickname)
 
 
 def sortMonstersByDist(point, characterX, characterY):
@@ -193,8 +193,9 @@ def useOnMe(x, y):
 
 
 def pressHotkey(hotkey):
-    win32gui.PostMessage(game, win32con.WM_KEYDOWN, 111+hotkey, 0x003B0001)
-    win32gui.PostMessage(game, win32con.WM_KEYUP, 111+hotkey, 0x003B0001)
+    hotkeyIndex = (((0x003A0001 >> 16) + hotkey) << 16) + 1
+    win32gui.PostMessage(game, win32con.WM_KEYDOWN, 0, hotkeyIndex)
+    win32gui.PostMessage(game, win32con.WM_KEYUP, 0, hotkeyIndex)
     return
 
 

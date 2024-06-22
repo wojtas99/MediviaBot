@@ -21,10 +21,10 @@ class HealingTab(QWidget):
         self.hotkeyRuneList_comboBox = QComboBox(self)
 
         # Line Edits
-        self.hpBelow_line = QLineEdit(self)
-        self.hpAbove_line = QLineEdit(self)
-        self.minMp_line = QLineEdit(self)
-        self.minMp_line.hide()
+        self.hpBelow_lineEdit = QLineEdit(self)
+        self.hpAbove_lineEdit = QLineEdit(self)
+        self.minMp_lineEdit = QLineEdit(self)
+        self.minMp_lineEdit.hide()
 
         # Labels
         self.mp_label = QLabel("Min MP:", self)
@@ -33,10 +33,11 @@ class HealingTab(QWidget):
         # List Widgets
         self.healList_listWidget = QListWidget(self)
 
+        # Layouts
         self.layout = QGridLayout(self)
         self.setLayout(self.layout)
 
-        # Functions
+        # Initialize
         self.healList()
         self.healHotkeyRune()
         self.startHealing()
@@ -68,7 +69,7 @@ class HealingTab(QWidget):
         self.hpMana_comboBox.addItem("MP")
         self.hotkeyRuneList_comboBox.addItem("UH")
         self.hotkeyRuneList_comboBox.addItem("Potion")
-        for i in range(1, 13):
+        for i in range(1, 11):
             self.hotkeyRuneList_comboBox.addItem("F" + f'{i}')
 
         # Combo Boxes Functions
@@ -84,11 +85,11 @@ class HealingTab(QWidget):
         layout1.addWidget(self.hpMana_comboBox)
         layout1.addWidget(self.hotkeyRuneList_comboBox)
         layout2.addWidget(QLabel("Below:", self))
-        layout2.addWidget(self.hpBelow_line)
+        layout2.addWidget(self.hpBelow_lineEdit)
         layout2.addWidget(QLabel("Above:", self))
-        layout2.addWidget(self.hpAbove_line)
+        layout2.addWidget(self.hpAbove_lineEdit)
         layout3.addWidget(self.mp_label)
-        layout3.addWidget(self.minMp_line)
+        layout3.addWidget(self.minMp_lineEdit)
         layout3.addWidget(addHotkey_button)
 
         # Add Layouts
@@ -118,30 +119,30 @@ class HealingTab(QWidget):
     def runeHotkeyListChange(self):
         if self.hotkeyRuneList_comboBox.currentIndex() != 0 and self.hpMana_comboBox.currentIndex() < 2:
             self.mp_label.show()
-            self.minMp_line.show()
-            self.minMp_line.setEnabled(True)
+            self.minMp_lineEdit.show()
+            self.minMp_lineEdit.setEnabled(True)
         else:
             self.mp_label.hide()
-            self.minMp_line.hide()
-            self.minMp_line.setEnabled(False)
+            self.minMp_lineEdit.hide()
+            self.minMp_lineEdit.setEnabled(False)
 
     def addHealing(self) -> None:
         healName = self.hotkeyRuneList_comboBox.currentText()
         healName += " " + self.hpMana_comboBox.currentText()
-        if self.minMp_line.text() == "":
-            self.minMp_line.setText("0")
+        if self.minMp_lineEdit.text() == "":
+            self.minMp_lineEdit.setText("0")
         if healName:
             healData = {"Type": self.hpMana_comboBox.currentText(),
                         "Option": self.hotkeyRuneList_comboBox.currentText(),
-                        "Below": int(self.hpBelow_line.text()),
-                        "Above": int(self.hpAbove_line.text()),
-                        "MinMp": int(self.minMp_line.text())}
+                        "Below": int(self.hpBelow_lineEdit.text()),
+                        "Above": int(self.hpAbove_lineEdit.text()),
+                        "MinMp": int(self.minMp_lineEdit.text())}
             heal = QListWidgetItem(healName)
             heal.setData(Qt.UserRole, healData)
             self.healList_listWidget.addItem(heal)
-            self.hpAbove_line.clear()
-            self.hpBelow_line.clear()
-            self.minMp_line.clear()
+            self.hpAbove_lineEdit.clear()
+            self.hpBelow_lineEdit.clear()
+            self.minMp_lineEdit.clear()
 
     def checkStartState(self) -> None:
         thread = Thread(target=self.startHealing_Thread)

@@ -1,7 +1,7 @@
 import time
 
 from Functions import *
-from HealingTab import HealingTab
+from Healing import HealingTab
 from Training import TrainingTab
 from Walker import WalkerTab
 from TargetLoot import TargetLootTab
@@ -13,7 +13,6 @@ from PIL import ImageSequence
 
 
 def add_Items_from_URL() -> None:
-    tmp = 0
     with open('Loot.txt', 'r') as f:
         for item in f:
             item = item.strip()
@@ -48,7 +47,7 @@ class MainWindow(QWidget):
 
         # Set Title and Size
         self.setFixedSize(400, 100)
-        #self.setWindowTitle("EasyBot - " + nickname)
+        self.setWindowTitle("EasyBot - " + nickname)
 
         # Instances
         self.targetLootTab_instance = None

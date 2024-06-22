@@ -26,11 +26,11 @@ class SettingsTab(QWidget):
         # Line Edits
         self.settings_lineEdit = QLineEdit(self)
 
-        # Layout
+        # Layouts
         self.layout = QGridLayout(self)
         self.setLayout(self.layout)
 
-        # Init View
+        # Initialize
         self.setTools()
         self.setEnvironment()
         self.saveLoadSettings()
