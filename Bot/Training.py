@@ -185,6 +185,7 @@ class TrainingTab(QWidget):
 
     def startSkill_Thread(self) -> None:
         timer = 0.0
+        antyIdleTimer = 0.0
         while self.burnMana_checkBox.checkState():
             for index in range(self.burnMana_listWidget.count()):
                 myMana = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
@@ -194,10 +195,25 @@ class TrainingTab(QWidget):
                     pressHotkey(int(self.burnMana_listWidget.item(index).text()[1:]))
                     time.sleep(0.5)
                     timer += 0.5
+                    antyIdleTimer += 0.5
             time.sleep(1)
             timer += 1
+            antyIdleTimer += 1
             if timer > 60:
                 timer = 0
+                rightClick(self.foodX + random.randint(-5, 5), self.foodY + random.randint(-5, 5))
+                time.sleep(1)
+                rightClick(self.foodX + random.randint(-5, 5), self.foodY + random.randint(-5, 5))
+                time.sleep(1)
+                rightClick(self.foodX + random.randint(-5, 5), self.foodY + random.randint(-5, 5))
+                time.sleep(1)
+                rightClick(self.foodX + random.randint(-5, 5), self.foodY + random.randint(-5, 5))
+                time.sleep(1)
+            if antyIdleTimer > 260:
                 antyIdle()
+                antyIdleTimer = 0
+
+
+    
 
 

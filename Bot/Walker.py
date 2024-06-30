@@ -360,7 +360,7 @@ class WalkerTab(QWidget):
             oldX = myX
             oldY = myY
             oldZ = myZ
-            time.sleep(0.1)
+            time.sleep(0.02)
 
     def startWalker_thread(self) -> None:
         thread = Thread(target=self.followWaypoints)
@@ -401,6 +401,24 @@ class WalkerTab(QWidget):
             time.sleep(0.1)
             if not lock.locked():
                 timer += 0.1
+            if timer > 10:  # Search for the nearest wpt
+                for index in range(self.waypoint_listWidget.count()):
+                    self.waypoint_listWidget.setCurrentRow(index)
+                    wptData = self.waypoint_listWidget.item(index).data(Qt.UserRole)
+                    mapX = wptData['X']
+                    mapY = wptData['Y']
+                    mapZ = wptData['Z']
+                    myX = c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+                    myY = c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+                    myZ = c.c_short.from_buffer(readMemory(myZAddress, 0)).value
+                    if myZ == mapZ and abs(mapX - myX) < 4 and abs(mapY - myY) < 4:
+                        currentWpt = index
+                        timer = 0
+                        leftClick(coordinatesX[0] + (mapX - myX) * 75, coordinatesY[0] + (mapY - myY) * 75)
+                        time.sleep(5)
+                        break
+                    time.sleep(0.1)
             if timer > 5:
                 leftClick(coordinatesX[0] + (mapX - myX) * 75, coordinatesY[0] + (mapY - myY) * 75)
                 time.sleep(5)
+                timer += 5

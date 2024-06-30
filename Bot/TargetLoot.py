@@ -356,6 +356,8 @@ class TargetLootTab(QWidget):
                 targetName = readMemory(targetID - baseAddress, 0xA8)
                 targetName = b''.join(targetName).split(b'\x00', 1)[0].decode('utf-8')
                 targetHP = c.c_int.from_buffer(readMemory(targetID - baseAddress, 0xE8)).value
+                targetY = c.c_int.from_buffer(readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress, 0x3C)).value
+                targetX = c.c_int.from_buffer(readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress, 0x38)).value
                 if self.targetList_listWidget.findItems(targetName, Qt.MatchFixedString):
                     targetIndex = self.targetList_listWidget.findItems(targetName, Qt.MatchFixedString)
                     targetIndex = targetIndex[0]
@@ -364,29 +366,20 @@ class TargetLootTab(QWidget):
                     targetRune = int(targetData['Rune'])
                     targetHpFrom = int(targetData['HpFrom'])
                     targetHpTo = int(targetData['HpTo'])
-                    targetY = c.c_int.from_buffer(
-                        readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress, 0x3C)).value
-                    targetX = c.c_int.from_buffer(
-                        readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress, 0x38)).value
                     myX = abs(targetX - c.c_int.from_buffer(readMemory(myXAddress, 0)).value)
                     myY = abs(targetY - c.c_int.from_buffer(readMemory(myYAddress, 0)).value)
                     openCorpse = False
                     if (targetDist > 0 and myX <= targetDist and myY <= targetDist) or targetDist == 0:
                         while c.c_ulonglong.from_buffer(readMemory(attack, 0)).value != 0:
                             openCorpse = True
-                            if (timer >= 5 and targetHP == c.c_int.from_buffer(
-                                    readMemory(targetID - baseAddress, 0xE8)).value) or timer >= 30:
+                            if (timer >= 7 and targetHP == c.c_int.from_buffer(readMemory(targetID - baseAddress, 0xE8)).value) or timer >= 30:
                                 openCorpse = False
                                 break
                             if not lock.locked():
                                 lock.acquire()
-                            targetY = c.c_int.from_buffer(
-                                readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress,
-                                           0x3C)).value
-                            targetX = c.c_int.from_buffer(
-                                readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress,
-                                           0x38)).value
-                            if targetRune != 0 and targetHpFrom >= targetHP > targetHpTo:
+                            targetY = c.c_int.from_buffer(readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress,0x3C)).value
+                            targetX = c.c_int.from_buffer(readMemory(c.c_ulonglong.from_buffer(readMemory(attack, 0)).value - baseAddress,0x38)).value
+                            if targetRune != 0 and targetHpFrom == 0:
                                 time.sleep(0.3)
                                 rightClick(coordinatesX[targetRune], coordinatesY[targetRune])
                                 x = targetX - c.c_int.from_buffer(readMemory(myXAddress, 0)).value
@@ -395,61 +388,70 @@ class TargetLootTab(QWidget):
                                 y = coordinatesY[0] + y * 75
                                 leftClick(x, y)
                                 timer += 0.3
-                            time.sleep(0.1)
-                            timer += 0.1
+                            elif targetRune != 0 and targetHpFrom >= c.c_int.from_buffer(readMemory(targetID - baseAddress, 0xE8)).value > targetHpTo:
+                                time.sleep(0.3)
+                                rightClick(coordinatesX[targetRune], coordinatesY[targetRune])
+                                x = targetX - c.c_int.from_buffer(readMemory(myXAddress, 0)).value
+                                y = targetY - c.c_int.from_buffer(readMemory(myYAddress, 0)).value
+                                x = coordinatesX[0] + x * 75
+                                y = coordinatesY[0] + y * 75
+                                leftClick(x, y)
+                                timer += 0.3
+                            time.sleep(0.05)
+                            timer += 0.05
                         if openCorpse and self.startLoot_checkBox.checkState() == 2:
                             x = targetX - c.c_int.from_buffer(readMemory(myXAddress, 0)).value
                             y = targetY - c.c_int.from_buffer(readMemory(myYAddress, 0)).value
                             x = coordinatesX[0] + x * 75
                             y = coordinatesY[0] + y * 75
                             rightClick(x, y)
-                            time.sleep(0.3)
-                            for itemIndex in range(self.lootList_listWidget.count()):
-                                itemName = self.lootList_listWidget.item(itemIndex).text()
-                                itemData = self.lootList_listWidget.item(itemIndex).data(Qt.UserRole)
-                                lootContainer = itemData['Loot']
-                                file_name = [x for x in os.listdir('ItemImages/') if x.split('.')[0] == itemName]
-                                if file_name:
-                                    time.sleep(0.1)
-                                    captureScreen = WindowCapture("Medivia - " + nickname, screenWidth[0] - screenX[0],
-                                                                  screenHeight[0] - screenY[0], screenX[0],
-                                                                  screenY[0])
-                                    if '.png' in file_name[0]:
-                                        loadedImage = cv.imread('ItemImages/'f'{itemName}' + '.png')
-                                        screenshot = captureScreen.get_screenshot()
-                                        result = cv.matchTemplate(screenshot, loadedImage, cv.TM_CCOEFF_NORMED)
-                                        locations = list(zip(*(np.where(result >= 0.85))[::-1]))
-                                        locations = mergeClosePoints(locations, 15)
-                                        locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
-                                        locations = [[int(x), int(y)] for x, y in locations]
-                                        for x, y in locations:
-                                            if lootContainer > 0:
-                                                collectItem(x + screenX[0], y + screenY[0],
-                                                            coordinatesX[lootContainer],
-                                                            coordinatesY[lootContainer])
-                                            elif lootContainer == 0:
-                                                dragDrop(x + screenX[0], y + screenY[0],
-                                                         coordinatesX[lootContainer], coordinatesY[lootContainer])
-                                            elif lootContainer == -1:
-                                                rightClick(x + screenX[0], y + screenY[0])
-                                            time.sleep(0.25)
-                                    else:
-                                        for itemName in os.listdir('ItemImages/' + file_name[0]):
-                                            loadedImage = cv.imread('ItemImages/'f'{file_name[0]}''/' + itemName)
+                            time.sleep(0.2)
+                            for _ in range(2):
+                                for itemIndex in range(self.lootList_listWidget.count()):
+                                    itemName = self.lootList_listWidget.item(itemIndex).text()
+                                    itemData = self.lootList_listWidget.item(itemIndex).data(Qt.UserRole)
+                                    lootContainer = itemData['Loot']
+                                    file_name = [x for x in os.listdir('ItemImages/') if x.split('.')[0] == itemName]
+                                    if file_name:
+                                        captureScreen = WindowCapture("Medivia - " + nickname, screenWidth[0] - screenX[0],
+                                                                      screenHeight[0] - screenY[0], screenX[0],
+                                                                      screenY[0])
+                                        if '.png' in file_name[0]:
+                                            loadedImage = cv.imread('ItemImages/'f'{itemName}' + '.png')
                                             screenshot = captureScreen.get_screenshot()
                                             result = cv.matchTemplate(screenshot, loadedImage, cv.TM_CCOEFF_NORMED)
-                                            locations = list(zip(*(np.where(result >= 0.70))[::-1]))
+                                            locations = list(zip(*(np.where(result >= 0.85))[::-1]))
                                             locations = mergeClosePoints(locations, 15)
                                             locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
                                             locations = [[int(x), int(y)] for x, y in locations]
                                             for x, y in locations:
                                                 if lootContainer > 0:
-                                                    collectItem(x + screenX[0], y + screenY[0], coordinatesX[lootContainer] ,coordinatesY[lootContainer])
+                                                    collectItem(x + screenX[0], y + screenY[0],
+                                                                coordinatesX[lootContainer],
+                                                                coordinatesY[lootContainer])
                                                 elif lootContainer == 0:
-                                                    dragDrop(x + screenX[0], y + screenY[0], coordinatesX[lootContainer], coordinatesY[lootContainer])
+                                                    dragDrop(x + screenX[0], y + screenY[0],
+                                                             coordinatesX[lootContainer], coordinatesY[lootContainer])
                                                 elif lootContainer == -1:
                                                     rightClick(x + screenX[0], y + screenY[0])
-                                                time.sleep(0.25)
+                                                time.sleep(0.1)
+                                        else:
+                                            for itemName in os.listdir('ItemImages/' + file_name[0]):
+                                                loadedImage = cv.imread('ItemImages/'f'{file_name[0]}''/' + itemName)
+                                                screenshot = captureScreen.get_screenshot()
+                                                result = cv.matchTemplate(screenshot, loadedImage, cv.TM_CCOEFF_NORMED)
+                                                locations = list(zip(*(np.where(result >= 0.70))[::-1]))
+                                                locations = mergeClosePoints(locations, 15)
+                                                locations = sorted(locations, key=lambda point: (point[1], point[0]), reverse=True)
+                                                locations = [[int(x), int(y)] for x, y in locations]
+                                                for x, y in locations:
+                                                    if lootContainer > 0:
+                                                        collectItem(x + screenX[0], y + screenY[0], coordinatesX[lootContainer] ,coordinatesY[lootContainer])
+                                                    elif lootContainer == 0:
+                                                        dragDrop(x + screenX[0], y + screenY[0], coordinatesX[lootContainer], coordinatesY[lootContainer])
+                                                    elif lootContainer == -1:
+                                                        rightClick(x + screenX[0], y + screenY[0])
+                                                    time.sleep(0.1)
             if lock.locked():
                 lock.release()
-            time.sleep(0.1)
+            time.sleep(0.5)

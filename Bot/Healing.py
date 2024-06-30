@@ -163,37 +163,38 @@ class HealingTab(QWidget):
                 myMaxHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPMAXOffset)).value
                 myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
                 myMaxMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPMAXOffset)).value
+                time.sleep(0.5)
                 if healType[0:2] == "HP":
                     if healOption == "UH":
                         if '%' in healType:
                             while healAbove <= (myHp * 100 / myMaxHp) < healBelow:
-                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
                                 useOnMe(coordinatesX[5], coordinatesY[5])
-                                time.sleep(0.5)
+                                time.sleep(1)
+                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
                         else:
                             while healAbove <= myHp < healBelow:
-                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
                                 useOnMe(coordinatesX[5], coordinatesY[5])
-                                time.sleep(0.5)
+                                time.sleep(1)
+                                myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
                     else:
                         if '%' in healType:
                             while healAbove <= (myHp * 100 / myMaxHp) < healBelow and myMp >= healMinMP:
+                                pressHotkey(int(healOption[1:]))
+                                time.sleep(1)
                                 myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
                                 myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
-                                pressHotkey(int(healOption[1:]))
-                                time.sleep(0.5)
                         else:
                             while healAbove <= myHp < healBelow and myMp >= healMinMP:
+                                pressHotkey(int(healOption[1:]))
+                                time.sleep(1)
                                 myHp = c.c_double.from_buffer(readPointer(myStatsPtr, myHPOffset)).value
                                 myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
-                                pressHotkey(int(healOption[1:]))
-                                time.sleep(0.5)
                 else:
                     if '%' in healType:
                         while healAbove <= (myMp * 100 / myMaxMp) < healBelow:
-                            myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
                             useOnMe(coordinatesX[5], coordinatesY[5])
-                            time.sleep(0.5)
+                            time.sleep(1)
+                            myMp = c.c_double.from_buffer(readPointer(myStatsPtr, myMPOffset)).value
 
 
 

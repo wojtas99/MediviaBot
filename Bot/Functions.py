@@ -21,24 +21,21 @@ lParam = [0X00480001, 0x00500001, 0X004D0001, 0X004B0001,  # 8, 2, 6, 4
 
 
 # Static addresses
-myXAddress = 0xBED9A0
-myYAddress = 0xBED9A4
-myZAddress = 0xBED9A8
-myName = 0xBEC870
-attack = 0xBEC920
+myXAddress = 0XBF12E0
+myYAddress = 0XBF12E4
+myZAddress = 0XBF12E8
+myName = 0XBF01B0
+attack = 0XBF0260
 
 # Pointers
-myStatsPtr = 0x00BEC918
-myHPOffset = [0x558]
-myHPMAXOffset = [0x560]
+myStatsPtr = 0X00BF0258
+myHPOffset = [0X558]
+myHPMAXOffset = [0X560]
 myMPOffset = [0x590]
 myMPMAXOffset = [0x598]
 
-monstersOnScreenPtr = 0x00BECA58
-monstersOnScreenOffset = [0x858, 0xE0, 0XF68, 0X4F8, 0XE64]
-
-containerPtr = 0x00C6FDD0
-containerOffset = [0XE8, 0X2B0, 0X0, 0X1D8, 0XEA8]
+monstersOnScreenPtr = 0X00C76548
+monstersOnScreenOffset = [0X90, 0X68, 0X178, 0X7B0, 0X1B8, 0XE64]
 
 # Global variables
 screenX = [0] * 1
